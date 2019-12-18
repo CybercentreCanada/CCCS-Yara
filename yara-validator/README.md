@@ -1,0 +1,1 @@
+This is the Yara Validator Library
