@@ -12,7 +12,7 @@ yara_validator.py:		This is the validator library. It is used to verify specifie
 
 - [CCCS_Yara_values.yml](https://github.com/CybercentreCanada/cccs-yara-formatter/blob/master/CCCS_Yara_values.yml): File which describe the list of acceptable values for fields defined in the CCCS_Yara.yml
 
-yara_validator_cli.py:	This is the command line interface used to run the yara_validator.py script. It takes a file, list of files, a folder looking for files with the .yar or .yara extention. 
+yara_validator_cli.py:	This is a command line interface utility. It takes a file, list of files, a folder looking for files with the .yar or .yara extention. 
 
 Note: the library and the cli are currently designed with the assumption that each file has a single yara rule in it.
 
