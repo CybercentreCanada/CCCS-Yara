@@ -198,7 +198,7 @@ class YaraValidatorReturn:
         A string representation of a yara rule is passed into this function, it performs the splitlines() function,
             searches for the start and the end indexes of the meta section of the first yara rule.
         :param rule_to_process: The Rule to be processed
-        :return: a tupple of the array of lines for the rule processed, the start of meta index and the end of meta index
+        :return: a tuple of the array of lines for the rule processed, the start of meta index and the end of meta index
         """
         rule_to_process_lines = rule_to_process.splitlines()
         rule_start = 0
