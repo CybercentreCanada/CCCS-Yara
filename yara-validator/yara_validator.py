@@ -31,7 +31,7 @@ SCRIPT_LOCATION = Path(__file__).resolve().parent
 MITRE_STIX_DATA_PATH= SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
 VALIDATOR_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_Yara_Values.yml'
 
-# constants to deal with various required other strings
+# constants to deal with various required string comparisons
 SCOPES = 'scopes'
 GLOBAL = '^global$'
 ASCII = 'ascii'
@@ -91,7 +91,7 @@ def run_yara_validator(yara_file):
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string representation
         of the yara file to YaraValidator.valadation
 
-        NOTE the current function assumes one rule per file.
+        NOTE the current function assumes one rule per file and will only process the first rule found.
     :param yara_file:
     :return:
     """
@@ -196,7 +196,7 @@ class YaraValidatorReturn:
     def __find_meta_start_end(self, rule_to_process):
         """
         A string representation of a yara rule is passed into this function, it performs the splitlines() function,
-            searches for the start and the end indexes of the meta section of the yara rule.
+            searches for the start and the end indexes of the meta section of the first yara rule.
         :param rule_to_process: The Rule to be processed
         :return: a tupple of the array of lines for the rule processed, the start of meta index and the end of meta index
         """
@@ -416,7 +416,6 @@ class YaraValidator:
         :param rule_to_validate_string: the string representation of the yara rule to verify, this is passed to the YaraValidatorReturn object for use later
         :return: the valid object of the YaraValidatorReturn class
         """
-        self.initialize()
         valid = YaraValidatorReturn(rule_to_validate_string)
 
         if not METADATA in rule_to_validate:
@@ -615,7 +614,7 @@ class YaraValidator:
     def valid_fingerprint(self, rule_to_generate_id, tag_index):
         """
         Calculates a valid fingerprint for the fingerprint metadata tag and inserts it or replaces the existing value
-            of the fingerprint metadata tag
+            of the fingerprint metadata tag.
             Current functionality is not to check the value of an existing fingerprint metadata tag and just overwrite
             it as this is automatically filled out.
         :param rule_to_generate_id: the plyara parsed rule that is being validated
@@ -658,7 +657,8 @@ class YaraValidator:
         Creates a valid UUID for the id metadata tag and inserts it or verifies an existing id metadata tag
         :param rule_to_generate_uuid: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the id metadata tag is
-        :return: True if a the value of the id metadata tag is of the correct size or if a new UUID is generated or False if the existing value is not of the correct size
+        :return: True if a the value of the id metadata tag is of the correct size or if a new UUID is generated or
+            False if the existing value is not of the correct size
         """
         self.required_fields[UUID].attributefound()
         self.required_fields_index[self.required_fields[UUID].position].increment_count()
@@ -891,7 +891,7 @@ class YaraValidator:
     def valid_category(self, rule_to_validate_category, tag_index):
         """
         Pulls the value of the category metadata tag and checks if it is a valid category type.
-            Valid options are stored in self.category_types. If it is the category value is valid and a new metadata
+            Valid options are stored in self.category_types. If the category value is valid and a new metadata
             tag with a name the same as the category value is added to be searched for.
             This new metadata tag links to the same object as the initially created self.required_fields[CATEGORY_TYPE].
         :param rule_to_validate_category: the plyara parsed rule that is being validated
@@ -920,7 +920,8 @@ class YaraValidator:
 
     def valid_rule_type(self, rule_to_validate_type, tag_index):
         """
-
+        This will be called by the new tag created by the valid_category function. Because it references the same object
+            as that initialized as CATEGORY_TYPE we can use that to reference the reqired tag in this function.
         :param rule_to_validate_type: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the category_type metadata tag is
         :return: True if the value matches the Regex expression and False if it was not found
@@ -964,9 +965,9 @@ class YaraValidator:
 
     def valid_last_modified(self, rule_to_date_check, tag_index):
         """
-        This value can be generated there is the option to verify if an existing date is correct, insert a generated
-            date if none was found and if the potential default metadata index would be out of bounds appends
-            a generated date
+        This value can be generated: there is the option to verify if an existing date is correct, insert a generated
+            date if none was found and if the potential default metadata index would be out of bounds appends a
+                generated date
         :param rule_to_date_check: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the last_modified metadata tag is
         :return: True if the value matches the valid date format and False if it does not match it
@@ -995,7 +996,7 @@ class YaraValidator:
 
     def valid_first_imported(self, rule_to_date_check, tag_index):
         """
-        This value can be generated there is the option to verify if an existing date is correct, insert a generated
+        This value can be generated: there is the option to verify if an existing date is correct, insert a generated
             date if none was found and if the potential default metadata index would be out of bounds appends
             a generated date
         :param rule_to_date_check: the plyara parsed rule that is being validated
@@ -1051,7 +1052,7 @@ class YaraValidator:
 
     def valid_version(self, rule_to_version_check, tag_index):
         """
-        This value can be generated there is the option to verify if an existing version format is correct, insert a
+        This value can be generated: there is the option to verify if an existing version format is correct, insert a
             generated version if none was found and if the potential default metadata index would be out of bounds
             appends a generated version
         :param rule_to_version_check: the plyara parsed rule that is being validated
@@ -1175,22 +1176,6 @@ class YaraValidator:
             keys_to_return.append(MITRE_GR_DEF)
 
         return keys_to_return
-
-    def initialize(self):
-        self.required_fields_variable_names = {}
-        self.mitre_group_alias = None
-
-        # Reset actor_type to optional
-        self.required_fields[ACTOR_TYPE].optional = TagOpt.OPT_OPTIONAL
-        self.required_fields[AL_CONFIG_D].optional = TagOpt.OPT_OPTIONAL
-        self.required_fields[AL_CONFIG_P].optional = TagOpt.OPT_OPTIONAL
-        self.required_fields[REFERENCE].optional = TagOpt.OPT_OPTIONAL
-
-        for required_field in self.required_fields.keys():
-            self.required_fields[required_field].attributereset()
-
-        for index, required_field_index in enumerate(self.required_fields_index):
-            self.required_fields_index[index].set_values(index)
 
     def __parse_scheme(self, cfg_to_parse):
         cfg_being_parsed = ""

@@ -19,6 +19,8 @@ YARA_FILENAME_REGEX = "(\.yara|\.yar)$"
 YARA_VALID_PREFIX = "valid_"
 YARA_VALID_PREFIX_REG = re.compile("^" + YARA_VALID_PREFIX)
 
+# Defining the parser and arguments to parse so it be used both when called by the command line and with the git_ci
+# function.
 parser = argparse.ArgumentParser(description="CCCS YARA script to run the CCCS YARA validator, "
                                              "if the -i or -c flags are not provided no changes "
                                              "will be made to the files.")
@@ -181,7 +183,7 @@ def __call_validator(options):
                 print_warnings(rule_return, options)
 
         elif rule_return.rule_warnings and not options.warnings:
-            # The rule is valid but has warnings, and warning are turned on
+            # The rule is valid, has warnings and warning are turned on
 
             all_warning_rule_returns.append((yara_rule_path, rule_return))
 
@@ -192,7 +194,7 @@ def __call_validator(options):
                 print_warnings(rule_return, options)
 
         elif rule_return.rule_validity:
-            # The rule is valid with no warnings
+            # The rule is valid with no warnings or has warnings and warnings are turned off
 
             if not options.fail:
                 print("{message:40}{y_file}".format(message="   Valid Rule File:",
