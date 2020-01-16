@@ -2,7 +2,7 @@
 
 ## CCCS YARA Specification
 
-The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml) has been created to define the style and format of YARA rule metadata. 
+The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml) has been created to define and validate the style and format of YARA rule metadata. 
 
 Over the years we have seen many Yara rules; in order to leverage them to their full potential we always had to modify some of their associated metadata, even for rules we developped ourselves. Adjusting simple elements such as datetime format and adding important information to help analysts.
 
@@ -28,19 +28,25 @@ Note: the library and the cli are currently designed with the assumption that ea
 
 ## Spécification YARA du CCCS
 
-La [Spécification YARA du CCCS](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml) a été créé pour définir le style et le format des attributs pour les règles YARA. Cette ontologie simplifie l'intégration des règles dans vos systèmes et l'échange de règles dans un format bien défini. [AssemblyLine](https://www.cyber.gc.ca/en/assemblyline) supporte cette spécification nativement et l'utilisera pour fournir d'avantage d'information a l'utilisateur lors du déclanchement d'une signature.
+La [Spécification YARA du CCCS](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml) a été créé pour définir et validé le style et le format des attributs pour les règles YARA. 
+
+Au fil des années nous avons vu beaucoup de régles Yara; mais pour pouvoir les utilisées à leur plein potentiel nous devions modifiée les méta données associtiées, parfois même pour nos propres règles. En ajustant des éléments aussi simples que le format de date et en ajoutant des attributs important pour les analystes.
+
+Ce standard pour les méta données inclus aussi des champs spécifique au [MITRE ATT&CK framework](https://attack.mitre.org/matrices/enterprise/) pour identifier les techniques et les groups d'acteurs [MITRE ATT&CK threat groups](https://attack.mitre.org/groups/).
+
+[AssemblyLine](https://www.cyber.gc.ca/en/assemblyline) supporte cette spécification nativement et l'utilisera pour fournir d'avantage d'information à l'utilisateur lors du déclanchement d'une signature.
 
 ## Composantes
 
-yara_validator.py:		La librairie de validation. Elle permet de vérifier si une règle YARA a tous les attributs nécessaires, elle auto-génère aussi certain attribut et les ordonnent selon l'ontologie. Tous les attributs supplémentaire ne faisant pas partie de la spécification sont placé a la fin.
+yara_validator.py:		La librairie de validation. Elle permet de vérifier si une règle YARA a tous les attributs nécessaires, elle auto-génère aussi certain attribut et les ordonnent selon l'ontologie. Tous les attributs supplémentaires ne faisant pas partie de la spécification sont placé à la fin.
 
-- [CCCS_Yara.yml](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml):        Fichier de de définition de la spécification. (Limitation: Ce fichier démontre les attributs nécessaires, présentement le validateur n'utilise pas se fichier directement, ceci sera améliorer dans le future.)
+- [CCCS_Yara.yml](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml):        Fichier de de définition de la spécification. (Limitation: Ce fichier démontre les attributs nécessaires, présentement le validateur n'utilise pas se fichier directement, ceci sera améliorer dans le futur.)
 
 - [CCCS_Yara_values.yml](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara_values.yml): Fichier qui décrit les valeurs acceptables pour chacun des attributs définit dans CCCS_Yara.yml.
 
 yara_validator_cli.py:	Utilitaire de validation pour la ligne de commande. Il accepte une règle, une liste de règles ou un dossier pour validé les fichiers se terminant par .yar ou .yara.  
 
-Note:  la librairie et l'utilitaire de ligne de commande n'accepte que les fichiers qui contient un seule règle par fichier.
+Note:  la librairie et l'utilitaire de ligne de commande n'accepte que les fichiers qui contient une seule règle par fichier.
 
 
 ## Requirements
