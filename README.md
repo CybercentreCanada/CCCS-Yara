@@ -8,7 +8,7 @@ Over the years we have seen many Yara rules; in order to leverage them to their 
 
 This specification also include fields specific to the [MITRE ATT&CK framework](https://attack.mitre.org/matrices/enterprise/) to identify techniques and universal [MITRE ATT&CK threat groups](https://attack.mitre.org/groups/).
 
-Note: The [Cyber Threat Intelligence Rpository](https://github.com/mitre/cti) is a submodule of this repository. The following command can be used to clone and initilize the submodule "git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git" or after cloning you can use "git submodule update --init --recursive".
+Note: The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository, "git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git".
 
 [AssemblyLine](https://www.cyber.gc.ca/en/assemblyline) supports this specification natively and will leverage it to provide more context around YARA signature hits.
 
