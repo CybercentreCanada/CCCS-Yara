@@ -2,7 +2,13 @@
 
 ## CCCS YARA Specification
 
-The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml) has been created to define the style and format of YARA rule metadata. This ontology simplifies system integration and exchange of your yara rules with well defined fields and formats. [AssemblyLine](https://www.cyber.gc.ca/en/assemblyline) supports this specification natively and will leverage it to provide more context around YARA signature hits.
+The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml) has been created to define the style and format of YARA rule metadata. 
+
+Over the years we have seen many Yara rules; in order to leverage them to their full potential we always had to modify some of their associated metadata, even for rules we developped ourselves. Adjusting simple elements such as datetime format and adding important information to help analysts.
+
+This specificstion also include fields specific to the [MITRE ATT&CK framework](https://attack.mitre.org/matrices/enterprise/) to identify techniques and universal [MITRE ATT&CK threat groups](https://attack.mitre.org/groups/).
+
+[AssemblyLine](https://www.cyber.gc.ca/en/assemblyline) supports this specification natively and will leverage it to provide more context around YARA signature hits.
 
 ## Components
 
