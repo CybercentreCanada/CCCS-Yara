@@ -4,7 +4,7 @@
 
 The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml) has been created to define and validate the style and format of YARA rule metadata. 
 
-Over the years we have seen many Yara rules; in order to leverage them to their full potential we always had to modify some of their associated metadata, even for rules we developped ourselves. Adjusting simple elements such as datetime format and adding important information to help analysts.
+Over the years we have seen many Yara rules; in order to leverage them to their full potential we always had to modify some of their associated metadata, even for rules we developed ourselves. Adjusting simple elements such as datetime format and adding important information to help analysts.
 
 This specification also include fields specific to the [MITRE ATT&CK framework](https://attack.mitre.org/matrices/enterprise/) to identify techniques and universal [MITRE ATT&CK threat groups](https://attack.mitre.org/groups/).
 
@@ -12,7 +12,7 @@ This specification also include fields specific to the [MITRE ATT&CK framework](
 
 ## Components
 
-yara_validator.py:		This is the validator library. It is used to verify specified the yara rule has specified metadata information, autogenerates some of the tags and sorts the tags in the canonical order with all 'unknown' metadata information appended to the bottom.
+yara_validator.py:		This is the validator library. It is used to validate the metadata section of yara rules. It verifies specified metadata information, auto-generates some of metadata information and resorts the metadata information into the canonical order with all 'unknown' metadata information appended to the bottom.
 
 - [CCCS_Yara.yml](https://github.com/CybercentreCanada/CCCS-YARA-Validator/blob/master/CCCS_Yara.yml):        This is the definition of the CCCS YARA Standard in the .yml format. (Limitation: This file is provided to show what fields are expected, currently the yara_validator dosen't use this file directly, this will be addressed in a future release.)
 
