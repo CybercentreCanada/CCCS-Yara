@@ -7,7 +7,7 @@ rule_statuses:
    -
       value: 'RELEASED'
    -
-      value: 'DEPRICATED'
+      value: 'DEPRECATED'
 
 sharing_classifications:
    - 
