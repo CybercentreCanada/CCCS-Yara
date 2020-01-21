@@ -29,7 +29,7 @@ from cfg.filter_casefold import FilterCasefold
 # set current working directory
 SCRIPT_LOCATION = Path(__file__).resolve().parent
 MITRE_STIX_DATA_PATH= SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
-VALIDATOR_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_Yara_Values.yml'
+VALIDATOR_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_Yara_values.yml'
 
 # constants to deal with various required string comparisons
 SCOPES = 'scopes'
