@@ -30,6 +30,7 @@ from cfg.filter_casefold import FilterCasefold
 SCRIPT_LOCATION = Path(__file__).resolve().parent
 MITRE_STIX_DATA_PATH= SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
 VALIDATOR_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_Yara_values.yml'
+CONFIGURATION_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_Yara.yml'
 
 # constants to deal with various required string comparisons
 SCOPES = 'scopes'
@@ -44,43 +45,16 @@ OPENSOURCE_REGEX = '^OPENSOURCE$'
 
 # constants to store the string tag used to reference to particular important tags
 METADATA = 'metadata'
-UUID = 'id'
-FINGERPRINT = 'fingerprint'
-VERSION = 'version'
-FIRST_IMPORTED = 'first_imported'
-LAST_MODIFIED = 'last_modified'
-STATUS = 'status'
-SHARING = 'sharing'
-SOURCE = 'source'
-REFERENCE = 'reference'
-AUTHOR = 'author'
-DESCRIPTION = 'description'
-CATEGORY = 'category'
-CATEGORY_TYPE = 'category_type'
-MALWARE_TYPE = 'malware_type'
-MITRE_ATT = 'mitre_att'
-ACTOR_TYPE = 'actor_type'
-ACTOR = 'actor'
-MITRE_GR_DEF = 'mite_group_default'
-MITRE_GROUP = 'mitre_group'
 REPORT = 'report'
 HASH = 'hash'
-VOL_SCRIPT = 'vol_script'
-AL_CONFIG_D = 'al_configdumper'
-AL_CONFIG_P = 'al_configparser'
-CREDIT = 'credit'
+ACTOR = 'actor'
+AUTHOR = 'author'
 
 # potential values of TagAttributes.optional variable
 class TagOpt(Enum):
     REQ_PROVIDED = 'req_provided'
     REQ_OPTIONAL = 'req_optional'
     OPT_OPTIONAL = 'opt_optional'
-
-# potential values of TagAttributes.max_count variable
-class TagAtt(Enum):
-    UNIQUE = 1
-    LIMITED = 2
-    NONUNIQUE = -1
 
 """
 RUN THE VALIDATOR BY CALLING THIS FUNCTION IF YOU ARE NOT USING THE cccs_yara.py script
@@ -246,23 +220,17 @@ class TagAttributes:
         validate the given metadata tag, regex expression or funcion name used to verify, the optionality of the metadata tag,
         the max count of the metadata tag and the position of the matching Positional object in the YaraValidator.required_fields_index
     """
-    type = None
-    regex = None
     function = None
+    argument = None
     optional = None
     max_count = None
     position = None
     found = False
     valid = False
 
-    def __init__(self, tag_type, tag_value, tag_optional, tag_max_count, tag_position):
-        self.type = tag_type
-
-        if self.type == 'regex':
-            self.regex = tag_value
-        elif self.type == 'function':
-            self.function = tag_value
-
+    def __init__(self, tag_validator, tag_optional, tag_max_count, tag_position, tag_argument):
+        self.function = tag_validator
+        self.argument = tag_argument
         self.optional = tag_optional
         self.max_count = tag_max_count
         self.position = tag_position
@@ -352,8 +320,8 @@ class YaraValidator:
                     correct_order[positional.index()] = metadata_tags.pop(tracking_left)
                     positional.increment_offset()
                     tracking_added = tracking_added + 1
-                elif key in self.required_fields_variable_names:
-                    positional = self.required_fields_index[self.required_fields_variable_names[key].position]
+                elif key in self.required_fields_children:
+                    positional = self.required_fields_index[self.required_fields_children[key].position]
                     correct_order[positional.index()] = metadata_tags.pop(tracking_left)
                     positional.increment_offset()
                     tracking_added = tracking_added + 1
@@ -369,36 +337,19 @@ class YaraValidator:
 
         rule_to_sort[METADATA] = correct_order
 
-    def process_key(self, key, value, fields, rule_processing_key, tag_index):
+    def process_key(self, key, fields, rule_processing_key, tag_index):
         """
         The primary function that determines how to treat a specific metadata tag for validation, it will either call
             the function or perform the regex comparison
         :param key: the name of the metadata tag that is being processed
-        :param value: the value of the metadata tag that is being processed
         :param fields: the dictonary of metadata tags to check against this can differ depending on where validation is in the process
         :param rule_processing_key: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the key being processed is
         :return:
         """
-        if fields[key].type == 'function':
-            if not fields[key].function(rule_processing_key, tag_index):
-                rule_response = "Field has Invalid Value:\t" + str(rule_processing_key[METADATA][tag_index][key])
-                return False, rule_response
-
-        elif fields[key].type == 'regex':
-            fields[key].attributefound()
-            if re.fullmatch(fields[key].regex, value):
-                fields[key].attributevalid()
-                self.required_fields_index[fields[key].position].increment_count()
-            elif re.fullmatch(fields[key].regex, str(value).upper()):
-                rule_processing_key[METADATA][tag_index][key] = str(value).upper()
-                fields[key].attributevalid()
-                self.required_fields_index[fields[key].position].increment_count()
-            else:
-                rule_response = "Field has Invalid Value:\t" + str(rule_processing_key[METADATA][tag_index][key])
-                fields[key].attributeinvalid()
-                return False, rule_response
-
+        if not fields[key].function(rule_processing_key, tag_index, key):
+            rule_response = "Field has Invalid Value:\t" + str(rule_processing_key[METADATA][tag_index][key])
+            return False, rule_response
         return True, ""
 
     def is_ascii(self, rule_string):
@@ -443,7 +394,7 @@ class YaraValidator:
                 if value == '':
                     index_of_empty_tags.append(tag_index)
                 elif key in self.required_fields:
-                    validity, rule_response = self.process_key(key, value, self.required_fields, rule_to_validate, tag_index)
+                    validity, rule_response = self.process_key(key, self.required_fields, rule_to_validate, tag_index)
                     if not validity:
                         valid.update_validity(validity, key, rule_response)
                 elif str(key).lower() in self.required_fields:
@@ -463,8 +414,8 @@ class YaraValidator:
                     key = list(tag.keys())[0]
                     value = list(tag.values())[0]
 
-                    if key in self.required_fields_variable_names:
-                        validity, rule_response = self.process_key(key, value, self.required_fields_variable_names, rule_to_validate, metadata_tag_index)
+                    if key in self.required_fields_children:
+                        validity, rule_response = self.process_key(key, self.required_fields_children, rule_to_validate, metadata_tag_index)
                         if not validity:
                             valid.update_validity(validity, key, rule_response)
 
@@ -481,7 +432,7 @@ class YaraValidator:
                 #else:
                     #valid.update_warning(True, key, "Optional Field Not Provided")
             else:
-                if self.required_fields_index[value.position].count > value.max_count.value and value.max_count.value != -1:
+                if self.required_fields_index[value.position].count > value.max_count and value.max_count != -1:
                     valid.update_validity(False, key, "Too Many Instances of Metadata Tag.")
 
         if valid.rule_validity:
@@ -611,7 +562,7 @@ class YaraValidator:
         m.update("".join(hash_strings).encode("ascii"))
         return m.hexdigest()
 
-    def valid_fingerprint(self, rule_to_generate_id, tag_index):
+    def valid_fingerprint(self, rule_to_generate_id, tag_index, tag_key):
         """
         Calculates a valid fingerprint for the fingerprint metadata tag and inserts it or replaces the existing value
             of the fingerprint metadata tag.
@@ -619,8 +570,10 @@ class YaraValidator:
             it as this is automatically filled out.
         :param rule_to_generate_id: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the fingerprint metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: This should return True all the time as there will always be a return from self.calculate_rule_hash
         """
+        FINGERPRINT = tag_key
         self.required_fields[FINGERPRINT].attributefound()
         self.required_fields_index[self.required_fields[FINGERPRINT].position].increment_count()
 
@@ -652,14 +605,16 @@ class YaraValidator:
         else:
             return False
 
-    def valid_uuid(self, rule_to_generate_uuid, tag_index):
+    def valid_uuid(self, rule_to_generate_uuid, tag_index, tag_key):
         """
         Creates a valid UUID for the id metadata tag and inserts it or verifies an existing id metadata tag
         :param rule_to_generate_uuid: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the id metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if a the value of the id metadata tag is of the correct size or if a new UUID is generated or
             False if the existing value is not of the correct size
         """
+        UUID = tag_key
         self.required_fields[UUID].attributefound()
         self.required_fields_index[self.required_fields[UUID].position].increment_count()
 
@@ -679,6 +634,32 @@ class YaraValidator:
 
         return self.required_fields[UUID].valid
 
+    def valid_regex(self, rule_to_validate, tag_index, tag_key):
+        """
+        Validates the metadata tag using provided regex expression
+        :param rule_to_validate: the plyara parsed rule that is being validated
+        :param tag_index: used to reference what the array index of the id metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
+        :return: True if the value of the metadata tag follows the regex expression or
+            False if the value is does not match the expression
+        """
+        value = list(rule_to_validate[METADATA][tag_index].values())[0]
+
+        self.required_fields[tag_key].attributefound()
+        self.required_fields_index[self.required_fields[tag_key].position].increment_count()
+
+        regex_expression = self.required_fields[tag_key].argument.get("regexExpression")
+
+        if re.fullmatch(regex_expression, value):
+            self.required_fields[tag_key].attributevalid()
+        elif re.fullmatch(regex_expression, str(value).upper()):
+            self.required_fields[tag_key].attributevalid()
+            rule_to_validate[METADATA][tag_index][tag_key] = str(value).upper()
+        else:
+            self.required_fields[tag_key].attributeinvalid()
+            return False
+        return True
+
     def get_group_from_alias(self, alias):
         """
         Maps any alias to the potential MITRE ATT&CK group name, if the provided name is a known alias.
@@ -695,47 +676,54 @@ class YaraValidator:
 
         return group_from_alias[0][MITRE_GROUP_NAME]
 
-    def mitre_group_generator(self, rule_to_generate_group, tag_index):
+    def mitre_group_generator(self, rule_to_generate_group, tag_index, tag_key):
         """
         This will only be looked for if the actor metadata tag has already been processed.
             Current functionality is not to check the value of an existing mitre_group metadata tag and just overwrite
             it as this is automatically filled out. Also if no alias is found it will be removed.
         :param rule_to_generate_group: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the mitre_group metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: This should return True all the time as there will always be a return from self.get_group_from_alias
         """
+        place_holder = self.required_fields[ACTOR].argument.get("child_place_holder")
+        if self.required_fields.get(tag_key):  # if child place holder is passed as tag_key
+            MITRE_GROUP = self.required_fields[self.required_fields[tag_key].argument['parent']].argument['child']
+        else:
+            MITRE_GROUP = tag_key
+
         mitre_group = str(self.get_group_from_alias(self.mitre_group_alias)).upper()
         rule_group = {MITRE_GROUP: mitre_group}
         if self.valid_metadata_index(rule_to_generate_group, tag_index):
             if list(rule_to_generate_group[METADATA][tag_index].keys())[0] == MITRE_GROUP:
                 if mitre_group:
                     rule_to_generate_group[METADATA][tag_index] = rule_group
-                    self.required_fields[MITRE_GR_DEF].attributefound()
-                    self.required_fields[MITRE_GR_DEF].attributevalid()
-                    self.required_fields_index[self.required_fields[MITRE_GR_DEF].position].increment_count()
+                    self.required_fields[place_holder].attributefound()
+                    self.required_fields[place_holder].attributevalid()
+                    self.required_fields_index[self.required_fields[place_holder].position].increment_count()
                 else:
                     rule_to_generate_group[METADATA].pop(tag_index)
                     return True
             else:
                 if mitre_group:
                     rule_to_generate_group[METADATA].insert(tag_index, rule_group)
-                    self.required_fields[MITRE_GR_DEF].attributefound()
-                    self.required_fields[MITRE_GR_DEF].attributevalid()
-                    self.required_fields_index[self.required_fields[MITRE_GR_DEF].position].increment_count()
+                    self.required_fields[place_holder].attributefound()
+                    self.required_fields[place_holder].attributevalid()
+                    self.required_fields_index[self.required_fields[place_holder].position].increment_count()
                 else:
                     return True
         else:
             if mitre_group:
                 rule_to_generate_group[METADATA].append(rule_group)
-                self.required_fields[MITRE_GR_DEF].attributefound()
-                self.required_fields[MITRE_GR_DEF].attributevalid()
-                self.required_fields_index[self.required_fields[MITRE_GR_DEF].position].increment_count()
+                self.required_fields[place_holder].attributefound()
+                self.required_fields[place_holder].attributevalid()
+                self.required_fields_index[self.required_fields[place_holder].position].increment_count()
             else:
                 return True
 
-        return self.required_fields[MITRE_GR_DEF].valid
+        return self.required_fields[place_holder].valid
 
-    def valid_actor(self, rule_to_validate_actor, tag_index):
+    def valid_actor(self, rule_to_validate_actor, tag_index, tag_key):
         """
         Validates the actor, makes the actor_type metadata tag required.
             Adds a required metadata tag for mitre_group to hold the a potential alias value.
@@ -743,8 +731,14 @@ class YaraValidator:
             mitre_group_generator function
         :param rule_to_validate_actor: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the actor metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if the value matches the self.mitre_group_alias_regex and False if it does not
         """
+        ACTOR = tag_key
+        ACTOR_TYPE = self.required_fields[ACTOR].argument.get("required")
+        child_tag = self.required_fields[ACTOR].argument.get("child")
+        child_tag_place_holder = self.required_fields[ACTOR].argument.get("child_place_holder")
+
         self.required_fields[ACTOR].attributefound()
         self.required_fields_index[self.required_fields[ACTOR].position].increment_count()
 
@@ -754,15 +748,15 @@ class YaraValidator:
         actor_to_check = metadata[tag_index][ACTOR]
         if re.fullmatch(self.mitre_group_alias_regex, actor_to_check):
             self.required_fields[ACTOR].attributevalid()
-            add_mitre_group_to_required = {MITRE_GROUP: self.required_fields[MITRE_GR_DEF]}
-            self.required_fields_variable_names.update(add_mitre_group_to_required)
+            add_mitre_group_to_required = {child_tag: self.required_fields[child_tag_place_holder]}
+            self.required_fields_children.update(add_mitre_group_to_required)
             self.mitre_group_alias = actor_to_check
         elif re.fullmatch(self.mitre_group_alias_regex, str(actor_to_check).upper()):
             actor_to_check = str(actor_to_check).upper()
             metadata[tag_index][ACTOR] = actor_to_check
             self.required_fields[ACTOR].attributevalid()
-            add_mitre_group_to_required = {MITRE_GROUP: self.required_fields[MITRE_GR_DEF]}
-            self.required_fields_variable_names.update(add_mitre_group_to_required)
+            add_mitre_group_to_required = {child_tag: self.required_fields[child_tag_place_holder]}
+            self.required_fields_children.update(add_mitre_group_to_required)
             self.mitre_group_alias = actor_to_check
         else:
             self.required_fields[ACTOR].attributeinvalid()
@@ -868,13 +862,15 @@ class YaraValidator:
         else:
             return self.get_mitreattck_by_id(id_code)
 
-    def valid_mitre_att(self, rule_to_validate_mitre_att, tag_index):
+    def valid_mitre_att(self, rule_to_validate_mitre_att, tag_index, tag_key):
         """
         Pulls the value of the mitre_att metadata tag and passes it to validate_mitre_att_by_id
         :param rule_to_validate_mitre_att: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the mitre_att metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if the value was found in the MITRE ATT&CK database and False if it was not found
         """
+        MITRE_ATT = tag_key
         self.required_fields[MITRE_ATT].attributefound()
         self.required_fields_index[self.required_fields[MITRE_ATT].position].increment_count()
 
@@ -888,7 +884,7 @@ class YaraValidator:
 
         return self.required_fields[MITRE_ATT].valid
 
-    def valid_category(self, rule_to_validate_category, tag_index):
+    def valid_category(self, rule_to_validate_category, tag_index, tag_key):
         """
         Pulls the value of the category metadata tag and checks if it is a valid category type.
             Valid options are stored in self.category_types. If the category value is valid and a new metadata
@@ -896,52 +892,58 @@ class YaraValidator:
             This new metadata tag links to the same object as the initially created self.required_fields[CATEGORY_TYPE].
         :param rule_to_validate_category: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the category metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if the value was found in self.category_types and False if it was not found
         """
+        CATEGORY = tag_key
         self.required_fields[CATEGORY].attributefound()
         self.required_fields_index[self.required_fields[CATEGORY].position].increment_count()
+        child_tag_place_holder = self.required_fields[CATEGORY].argument.get("child_place_holder")
 
         metadata = rule_to_validate_category[METADATA]
         rule_category_to_check = metadata[tag_index][CATEGORY]
         if rule_category_to_check in self.category_types:
             self.required_fields[CATEGORY].attributevalid()
-            add_category_type_to_required = {str(rule_category_to_check).lower(): self.required_fields[CATEGORY_TYPE]}
-            self.required_fields_variable_names.update(add_category_type_to_required)
+            add_category_type_to_required = {str(rule_category_to_check).lower(): self.required_fields[child_tag_place_holder]}
+            self.required_fields_children.update(add_category_type_to_required)
         elif str(rule_category_to_check).upper() in self.category_types:
             rule_category_to_check = str(rule_category_to_check).upper()
             metadata[tag_index][CATEGORY] = rule_category_to_check
             self.required_fields[CATEGORY].attributevalid()
-            add_category_type_to_required = {str(rule_category_to_check).lower(): self.required_fields[CATEGORY_TYPE]}
-            self.required_fields_variable_names.update(add_category_type_to_required)
+            add_category_type_to_required = {str(rule_category_to_check).lower(): self.required_fields[child_tag_place_holder]}
+            self.required_fields_children.update(add_category_type_to_required)
         else:
             self.required_fields[CATEGORY].attributeinvalid()
 
         return self.required_fields[CATEGORY].valid
 
-    def valid_rule_type(self, rule_to_validate_type, tag_index):
+    def valid_rule_type(self, rule_to_validate_type, tag_index, tag_key):
         """
         This will be called by the new tag created by the valid_category function. Because it references the same object
             as that initialized as CATEGORY_TYPE we can use that to reference the reqired tag in this function.
         :param rule_to_validate_type: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the category_type metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if the value matches the Regex expression and False if it was not found
         """
-        self.required_fields[CATEGORY_TYPE].attributefound()
-        self.required_fields_index[self.required_fields[CATEGORY_TYPE].position].increment_count()
+        CATEGORY = "category"
+        child_tag_place_holder = self.required_fields[CATEGORY].argument.get("child_place_holder")
+        self.required_fields[child_tag_place_holder].attributefound()
+        self.required_fields_index[self.required_fields[child_tag_place_holder].position].increment_count()
 
         metadata = rule_to_validate_type[METADATA]
         rule_category_key_to_check = list(metadata[tag_index].keys())[0]
         rule_category_value_to_check = list(metadata[tag_index].values())[0]
         if re.fullmatch(CATEGORY_TYPE_REGEX, rule_category_value_to_check):
-            self.required_fields[CATEGORY_TYPE].attributevalid()
+            self.required_fields[child_tag_place_holder].attributevalid()
         elif re.fullmatch(CATEGORY_TYPE_REGEX, str(rule_category_value_to_check).upper()):
             rule_category_value_to_check = str(rule_category_value_to_check).upper()
             metadata[tag_index][rule_category_key_to_check] = rule_category_value_to_check
-            self.required_fields[CATEGORY_TYPE].attributevalid()
+            self.required_fields[child_tag_place_holder].attributevalid()
         else:
-            self.required_fields[CATEGORY_TYPE].attributeinvalid()
+            self.required_fields[child_tag_place_holder].attributeinvalid()
 
-        return self.required_fields[CATEGORY_TYPE].valid
+        return self.required_fields[child_tag_place_holder].valid
 
     def validate_date(self, date_to_validate):
         """
@@ -963,15 +965,17 @@ class YaraValidator:
         """
         return datetime.datetime.now().strftime('%Y-%m-%d')
 
-    def valid_last_modified(self, rule_to_date_check, tag_index):
+    def valid_last_modified(self, rule_to_date_check, tag_index, tag_key):
         """
         This value can be generated: there is the option to verify if an existing date is correct, insert a generated
             date if none was found and if the potential default metadata index would be out of bounds appends a
                 generated date
         :param rule_to_date_check: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the last_modified metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if the value matches the valid date format and False if it does not match it
         """
+        LAST_MODIFIED = tag_key
         self.required_fields[LAST_MODIFIED].attributefound()
         self.required_fields_index[self.required_fields[LAST_MODIFIED].position].increment_count()
 
@@ -994,15 +998,17 @@ class YaraValidator:
 
         return self.required_fields[LAST_MODIFIED].valid
 
-    def valid_first_imported(self, rule_to_date_check, tag_index):
+    def valid_first_imported(self, rule_to_date_check, tag_index, tag_key):
         """
         This value can be generated: there is the option to verify if an existing date is correct, insert a generated
             date if none was found and if the potential default metadata index would be out of bounds appends
             a generated date
         :param rule_to_date_check: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the last_modified metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if the value matches the valid date format and False if it does not match it
         """
+        FIRST_IMPORTED = tag_key
         self.required_fields[FIRST_IMPORTED].attributefound()
         self.required_fields_index[self.required_fields[FIRST_IMPORTED].position].increment_count()
 
@@ -1023,13 +1029,16 @@ class YaraValidator:
 
         return self.required_fields[FIRST_IMPORTED].valid
 
-    def valid_source(self, rule_to_source_check, tag_index):
+    def valid_source(self, rule_to_source_check, tag_index, tag_key):
         """
         Validates the source
         :param rule_to_source_check:
         :param tag_index: used to reference what the array index of the last_modified metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if the value matches the UNIVERSAL_REGEX and False if it does not match it
         """
+        SOURCE = tag_key
+        REFERENCE = self.required_fields[SOURCE].argument.get("required")
         self.required_fields[SOURCE].attributefound()
         self.required_fields_index[self.required_fields[SOURCE].position].increment_count()
 
@@ -1050,15 +1059,17 @@ class YaraValidator:
 
         return self.required_fields[SOURCE].valid
 
-    def valid_version(self, rule_to_version_check, tag_index):
+    def valid_version(self, rule_to_version_check, tag_index, tag_key):
         """
         This value can be generated: there is the option to verify if an existing version format is correct, insert a
             generated version if none was found and if the potential default metadata index would be out of bounds
             appends a generated version
         :param rule_to_version_check: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the version metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True if the version is of the correct format and False if it is not
         """
+        VERSION = tag_key
         self.required_fields[VERSION].attributefound()
         self.required_fields_index[self.required_fields[VERSION].position].increment_count()
 
@@ -1078,13 +1089,15 @@ class YaraValidator:
 
         return self.required_fields[VERSION].valid
 
-    def valid_al_config_dumper(self, rule_to_validate_al_config_d, tag_index):
+    def valid_al_config_dumper(self, rule_to_validate_al_config_d, tag_index, tag_key):
         """
         Makes the al_config_parser metadata tag required if this is found first.
         :param rule_to_validate_al_config_d: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the actor metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True all the time because the value is never verified...
         """
+        AL_CONFIG_D = tag_key
         self.required_fields[AL_CONFIG_D].attributefound()
         self.required_fields_index[self.required_fields[AL_CONFIG_D].position].increment_count()
 
@@ -1096,13 +1109,15 @@ class YaraValidator:
 
         return self.required_fields[AL_CONFIG_D].valid
 
-    def valid_al_config_parser(self, rule_to_validate_al_config_p, tag_index):
+    def valid_al_config_parser(self, rule_to_validate_al_config_p, tag_index, tag_key):
         """
         Makes the al_config_dumper metadata tag required if this is found first.
         :param rule_to_validate_al_config_p: the plyara parsed rule that is being validated
         :param tag_index: used to reference what the array index of the actor metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
         :return: True all the time because the value is never verified...
         """
+        AL_CONFIG_P = tag_key
         self.required_fields[AL_CONFIG_P].attributefound()
         self.required_fields_index[self.required_fields[AL_CONFIG_P].position].increment_count()
 
@@ -1125,45 +1140,49 @@ class YaraValidator:
             warning(rule_to_check, valid)
 
     def warning_author_no_report_check(self, rule_to_check, valid):
-        if self.required_fields[AUTHOR].found and not self.required_fields[REPORT].found:
-            metadata_tags = rule_to_check[METADATA]
-            for tag in metadata_tags:
-                if len(tag.keys()) == 1:
-                    key = list(tag.keys())[0]
-                    value = list(tag.values())[0]
-                    if key == AUTHOR and (value == "RevEng@CCCS" or value == "reveng@CCCS"):
-                        valid.update_warning(True, REPORT, "Rule is authored by the CCCS but no report is referenced.")
+        if self.required_fields.get(AUTHOR) and self.required_fields.get(REPORT):
+            if self.required_fields[AUTHOR].found and not self.required_fields[REPORT].found:
+                metadata_tags = rule_to_check[METADATA]
+                for tag in metadata_tags:
+                    if len(tag.keys()) == 1:
+                        key = list(tag.keys())[0]
+                        value = list(tag.values())[0]
+                        if key == AUTHOR and (value == "RevEng@CCCS" or value == "reveng@CCCS"):
+                            valid.update_warning(True, REPORT, "Rule is authored by the CCCS but no report is referenced.")
 
     def warning_author_no_hash_check(self, rule_to_check, valid):
-        if self.required_fields[AUTHOR].found and not self.required_fields[HASH].found:
-            metadata_tags = rule_to_check[METADATA]
-            for tag in metadata_tags:
-                if len(tag.keys()) == 1:
-                    key = list(tag.keys())[0]
-                    value = list(tag.values())[0]
-                    if key == AUTHOR and value == "RevEng@CCCS":
-                        valid.update_warning(True, HASH, "Rule is authored by the CCCS but no hash is referenced.")
+        if self.required_fields.get(AUTHOR) and self.required_fields.get(HASH):
+            if self.required_fields[AUTHOR].found and not self.required_fields[HASH].found:
+                metadata_tags = rule_to_check[METADATA]
+                for tag in metadata_tags:
+                    if len(tag.keys()) == 1:
+                        key = list(tag.keys())[0]
+                        value = list(tag.values())[0]
+                        if key == AUTHOR and value == "RevEng@CCCS":
+                            valid.update_warning(True, HASH, "Rule is authored by the CCCS but no hash is referenced.")
 
     def warning_actor_no_mitre_group(self, rule_to_check, valid):
-        if self.required_fields[ACTOR].found and not self.required_fields[MITRE_GR_DEF].found:
-            metadata_tags = rule_to_check[METADATA]
-            for tag in metadata_tags:
-                if len(tag.keys()) == 1:
-                    key = list(tag.keys())[0]
-                    value = list(tag.values())[0]
-                    if key == ACTOR:
-                        warning_message = "Actor: " + value + " was not found in MITRE ATT&CK dataset."
-                        valid.update_warning(True, ACTOR, warning_message)
+        if self.required_fields.get(ACTOR) and self.required_fields[ACTOR].argument.get("child_place_holder"):
+            place_holder = self.required_fields[ACTOR].argument.get("child_place_holder")
+            if self.required_fields[ACTOR].found and not self.required_fields[place_holder].found:
+                metadata_tags = rule_to_check[METADATA]
+                for tag in metadata_tags:
+                    if len(tag.keys()) == 1:
+                        key = list(tag.keys())[0]
+                        value = list(tag.values())[0]
+                        if key == ACTOR:
+                            warning_message = "Actor: " + value + " was not found in MITRE ATT&CK dataset."
+                            valid.update_warning(True, ACTOR, warning_message)
 
     def generate_required_optional_tags(self, rule_to_validate):
         req_optional_keys = self.return_req_optional()
 
         for key in req_optional_keys:
             if not self.required_fields[key].found:
-                if self.required_fields[key].type == 'function':
-                    self.required_fields[key].function(rule_to_validate, self.required_fields_index[self.required_fields[key].position].index())
-                elif self.required_fields[key].type == 'regex':
+                if self.required_fields[key].function == self.valid_regex:
                     self.required_fields[key].attributefound()
+                else:
+                    self.required_fields[key].function(rule_to_validate, self.required_fields_index[self.required_fields[key].position].index(), key)
 
     def return_req_optional(self):
         keys_to_return = []
@@ -1173,8 +1192,7 @@ class YaraValidator:
                     keys_to_return.append(key)
 
         if self.mitre_group_alias and self.required_fields[ACTOR].found:
-            keys_to_return.append(MITRE_GR_DEF)
-
+            keys_to_return.append(self.required_fields[ACTOR].argument.get("child_place_holder"))
         return keys_to_return
 
     def __parse_scheme(self, cfg_to_parse):
@@ -1187,6 +1205,169 @@ class YaraValidator:
 
         return cfg_being_parsed
 
+    def handle_child_parent_tags(self, tag, params, tags_in_child_parent_relationship, place_holder="_child"):
+        """
+        Child tags create TagAttributes instances as temporary place holders in self.required_fields and
+        the place holders will be used to create the actual TagAttributes instances in self.required_fields_children.
+        This method creates a place holder for a child tag and adds the name of the place holder to a parent tag.
+        :param tag: string name of a tag in CCCS_Yara.yml file
+        :param params: parameters of the corresponding tag in a dictionary format
+        :param place_holder: string to be attached to a tag name -> will be used as a place holder name
+        :param tags_in_child_parent_relationship: list of tags that contain either parent or child argument
+        :return: void
+        """
+        argument = params.get("argument")
+        if argument:
+            if argument.get("parent"):
+                self.required_fields[tag + place_holder] = self.required_fields.pop(tag)
+                tags_in_child_parent_relationship.append(argument.get("parent"))
+            elif argument.get("child"):
+                child_tag = argument["child"]
+                argument.update({"child_place_holder": child_tag + place_holder})
+                tags_in_child_parent_relationship.append(argument.get("child"))
+
+    def validate_child_parent_tags(self, configuration, tags_in_child_parent_relationship):
+        """
+        Checks if any tags in child-parent relationships are missing from CCCS_Yara.yml configuration page
+        :param configuration: CCCS_Yara.yml configuration in dictionary format
+        :param tags_in_child_parent_relationship: a list of tags in child-parent relationships
+        :return: void
+        """
+        for tag in tags_in_child_parent_relationship:
+            if configuration.get(tag) is None:
+                print("CCCS_Yara.yml: \"" + tag + "\" is required (in a child-parent relationship)")
+                exit(1)
+
+    def read_regex_values(self, file_name, regex_tag):
+        """
+        Parses multiple values under the name "regex_tag" from given YAML file to make a single line of expression
+        :param file_name: name of the file to reference
+        :param regex_tag: name of the tag in the file that contains multiple regex expressions
+        :return: single line of regex expression
+        """
+        regex_yaml_path = SCRIPT_LOCATION.parent / file_name
+        with open(regex_yaml_path, "r") as yaml_file:
+            scheme = yaml.safe_load(yaml_file)
+
+        cfg_being_parsed = ""
+        for index, cfg in enumerate(scheme[regex_tag]):
+            if index > 0:
+                cfg_being_parsed = cfg_being_parsed + "|"
+
+            cfg_being_parsed = cfg_being_parsed + "^" + str(cfg['value']) + "$"
+
+        return cfg_being_parsed
+
+    def read_yara_cfg(self, tag, params, tag_position):
+        """
+        Creates a TagAttributes object for self.required_fields based on the CCCS_Yara.yml configuration
+        :param tag: string name of a tag in CCCS_Yara.yml file
+        :param params: parameters of the corresponding metadata tag in dictionary format
+        :param tag_position: index (position) of the key in CCCS_Yara.yml file
+        :return: TagAttributes instance
+        """
+        # parameters for creating a TagAttributes instance
+        tag_max_count = None
+        tag_optional = None
+        tag_validator = self.valid_regex  # default validator if not provided in the configuration
+        tag_argument = {"regexExpression": UNVALIDATED_REGEX}  # default argument (regex expression) for default validator
+
+        # check if the tag is optional
+        optional = params.get("optional")
+        if optional is not None:
+            if optional is True or re.fullmatch("(?i)^y$|yes", str(optional)):
+                tag_optional = TagOpt.OPT_OPTIONAL
+            elif optional is False or re.fullmatch("(?i)^n$|no", str(optional)):
+                tag_optional = TagOpt.REQ_PROVIDED
+            elif re.fullmatch("(?i)optional", str(optional)):
+                tag_optional = TagOpt.REQ_OPTIONAL
+            else:
+                print("CCCS_Yara.yml: \"" + tag + "\" has an invalid parameter - optional")
+                exit(1)
+        else:
+            print("CCCS_Yara.yml: \"" + tag + "\" has a missing parameter - optional")
+            exit(1)
+
+        # check if the tag is unique
+        unique = params.get("unique")
+        if unique is not None:
+            if unique is True or re.fullmatch("(?i)^y$|yes", str(unique)):
+                tag_max_count = 1   # tag_max_count = TagAtt.UNIQUE
+            elif unique is False or re.fullmatch("(?i)^n$|no", str(unique)):
+                tag_max_count = -1  # tag_max_count = TagAtt.NONUNIQUE
+            elif re.fullmatch("(?i)limited", str(unique)):
+                tag_max_count = 2   # tag_max_count = TagAtt.LIMITED
+            elif isinstance(unique, int):
+                tag_max_count = unique
+            else:
+                print("CCCS_Yara.yml: \"" + tag + "\" has an invalid parameter - unique")
+                exit(1)
+        else:
+            print("CCCS_Yara.yml: \"" + tag + "\" has a missing parameter - unique")
+            exit(1)
+
+        # check which validator to use
+        if params.get("validator"):  # validate the corresponding tag using the "validator"
+            tag_validator = self.validators.get(params["validator"])
+            if not tag_validator:
+                print("CCCS_Yara.yml: Validatior \"" + params["validator"] + "\" of \"" + tag + "\" is not defined")
+                exit(1)
+
+            tag_argument = params.get("argument")
+
+            if tag_validator == self.valid_regex:  # argument must have "regex expression" parameter when using "valid_regex"
+                if tag_argument is None:  # if argument field is empty or does not exist
+                    tag_argument = {"regexExpression": UNVALIDATED_REGEX}
+
+                elif isinstance(tag_argument, dict):
+                    input_fileName = tag_argument.get("fileName")
+                    input_valueName = tag_argument.get("valueName")
+                    input_regexExpression= tag_argument.get("regexExpression")
+
+                    # check if fileName/valueName and regexExpression are mutually exclusive
+                    if input_fileName:
+                        if input_valueName:
+                            if input_regexExpression:
+                                print("CCCS_Yara.yml: \"" + tag + "\" has too many parameters - fileName | valueName | regexExpression")
+                                exit(1)
+                            else:
+                                tag_argument.update({"regexExpression": self.read_regex_values(input_fileName, input_valueName)})
+                        else:
+                            if input_regexExpression:
+                                print("CCCS_Yara.yml: \"" + tag + "\" has too many parameters - fileName | regexExpression")
+                                exit(1)
+                            else:
+                                print("CCCS_Yara.yml: \"" + tag + "\" is missing a parameter - valueName")
+                                exit(1)
+                    else:
+                        if input_valueName:
+                            if input_regexExpression:
+                                print("CCCS_Yara.yml: \"" + tag + "\" has too many parameters - valueName | regexExpression")
+                                exit(1)
+                            else:
+                                print("CCCS_Yara.yml: \"" + tag + "\" is missing a parameter - fileName")
+                                exit(1)
+
+                else:
+                    print("CCCS_Yara.yml: \"" + tag + "\" has a parameter with invalid format - argument")
+                    exit(1)
+
+        return TagAttributes(tag_validator, tag_optional, tag_max_count, tag_position, tag_argument)
+
+    def import_yara_cfg(self):
+        """
+        Updates self.required_fields based on the CCCS_Yara.yml configuration
+        :return: void
+        """
+        tags_in_child_parent_relationship = []
+        for index, item in enumerate(self.yara_config.items()):  # python 3.6+ dictionary preserves the insertion order
+            cfg_tag = item[0]
+            cfg_params = item[1]  # {parameter : value}
+
+            self.required_fields[cfg_tag] = self.read_yara_cfg(cfg_tag, cfg_params, index)  # add a new TagAttributes instance
+            self.handle_child_parent_tags(cfg_tag, cfg_params, tags_in_child_parent_relationship)  # replace the name of child tag with its place holder
+        self.validate_child_parent_tags(self.yara_config, tags_in_child_parent_relationship)  # check if any tags in child-parent relationship are missing
+
     def __init__(self):
         # initialize the file system source for the MITRE ATT&CK data
         self.fs = FileSystemSource(MITRE_STIX_DATA_PATH)
@@ -1194,47 +1375,35 @@ class YaraValidator:
         with open(VALIDATOR_YAML_PATH, "r") as yaml_file:
             self.scheme = yaml.safe_load(yaml_file)
 
-        rule_statuses = self.__parse_scheme('rule_statuses')
-        sharing_classifications = self.__parse_scheme('sharing_classifications')
-        category_types = self.__parse_scheme('category_types')
-        malware_types = self.__parse_scheme('malware_types')
-        actor_types = self.__parse_scheme('actor_types')
-        hash_types = self.__parse_scheme('hash_types')
+        with open(CONFIGURATION_YAML_PATH, "r") as config_file:
+            self.yara_config = yaml.safe_load(config_file)
 
-        self.required_fields = {
-            UUID: TagAttributes("function", self.valid_uuid, TagOpt.REQ_OPTIONAL, TagAtt.UNIQUE, 0),
-            FINGERPRINT: TagAttributes("function", self.valid_fingerprint, TagOpt.REQ_OPTIONAL, TagAtt.UNIQUE, 1),
-            VERSION: TagAttributes("function", self.valid_version, TagOpt.REQ_OPTIONAL, TagAtt.UNIQUE, 2),
-            FIRST_IMPORTED: TagAttributes("function", self.valid_first_imported, TagOpt.REQ_OPTIONAL, TagAtt.UNIQUE,3),
-            LAST_MODIFIED: TagAttributes("function", self.valid_last_modified, TagOpt.REQ_OPTIONAL, TagAtt.UNIQUE, 4),
-            STATUS: TagAttributes("regex", rule_statuses, TagOpt.REQ_PROVIDED, TagAtt.UNIQUE, 5),
-            SHARING: TagAttributes("regex", sharing_classifications, TagOpt.REQ_PROVIDED, TagAtt.UNIQUE, 6),
-            SOURCE: TagAttributes("function", self.valid_source, TagOpt.REQ_PROVIDED, TagAtt.UNIQUE, 7),
-            REFERENCE: TagAttributes("regex", UNVALIDATED_REGEX, TagOpt.OPT_OPTIONAL, TagAtt.NONUNIQUE, 8),
-            AUTHOR: TagAttributes("regex", '^[a-zA-Z]+\@[A-Z]+$|^[A-Z]+$', TagOpt.REQ_PROVIDED, TagAtt.NONUNIQUE, 9),
-            DESCRIPTION: TagAttributes("regex", ".*", TagOpt.REQ_PROVIDED, TagAtt.UNIQUE, 10),
-            CATEGORY: TagAttributes("function", self.valid_category, TagOpt.REQ_PROVIDED, TagAtt.UNIQUE, 11),
-            CATEGORY_TYPE: TagAttributes("function", self.valid_rule_type, TagOpt.REQ_PROVIDED, TagAtt.UNIQUE, 12),
-            MALWARE_TYPE: TagAttributes("regex", malware_types, TagOpt.OPT_OPTIONAL, TagAtt.NONUNIQUE, 13),
-            MITRE_ATT: TagAttributes("function", self.valid_mitre_att, TagOpt.OPT_OPTIONAL, TagAtt.NONUNIQUE, 14),
-            ACTOR_TYPE: TagAttributes("regex", actor_types, TagOpt.OPT_OPTIONAL, TagAtt.LIMITED, 15),
-            ACTOR: TagAttributes("function", self.valid_actor, TagOpt.OPT_OPTIONAL, TagAtt.UNIQUE, 16),
-            MITRE_GR_DEF: TagAttributes("function", self.mitre_group_generator, TagOpt.OPT_OPTIONAL, TagAtt.UNIQUE, 17),
-            REPORT: TagAttributes("regex", UNIVERSAL_REGEX, TagOpt.OPT_OPTIONAL, TagAtt.NONUNIQUE, 18),
-            HASH: TagAttributes("regex", hash_types, TagOpt.OPT_OPTIONAL, TagAtt.NONUNIQUE, 19),
-            VOL_SCRIPT:  TagAttributes("regex", UNVALIDATED_REGEX, TagOpt.OPT_OPTIONAL, TagAtt.UNIQUE, 20),
-            AL_CONFIG_D: TagAttributes("function", self.valid_al_config_dumper, TagOpt.OPT_OPTIONAL, TagAtt.UNIQUE, 21),
-            AL_CONFIG_P: TagAttributes("function", self.valid_al_config_parser, TagOpt.OPT_OPTIONAL, TagAtt.UNIQUE, 22),
-            CREDIT: TagAttributes("regex", UNVALIDATED_REGEX, TagOpt.OPT_OPTIONAL, TagAtt.NONUNIQUE,23)
+        self.validators = {
+            "valid_regex": self.valid_regex,
+            "valid_uuid": self.valid_uuid,
+            "valid_fingerprint": self.valid_fingerprint,
+            "valid_version": self.valid_version,
+            "valid_first_imported": self.valid_first_imported,
+            "valid_last_modified": self.valid_last_modified,
+            "valid_source": self.valid_source,
+            "valid_category": self.valid_category,
+            "valid_rule_type": self.valid_rule_type,
+            "valid_mitre_att": self.valid_mitre_att,
+            "valid_actor": self.valid_actor,
+            "mitre_group_generator": self.mitre_group_generator,
+            "valid_al_config_dumper": self.valid_al_config_dumper,
+            "valid_al_config_parser": self.valid_al_config_parser
         }
+
+        self.required_fields = {}
+        self.import_yara_cfg()
 
         self.required_fields_index = [Positional(i) for i in range(len(self.required_fields))]
 
-        self.category_types = category_types
-
+        self.category_types = self.__parse_scheme('category_types')
         self.mitre_group_alias = None
         self.mitre_group_alias_regex = "^[A-Z 0-9\.-]+$"
-        self.required_fields_variable_names = {}
+        self.required_fields_children = {}
 
         self.warning_functions = [
             self.warning_author_no_report_check,

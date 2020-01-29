@@ -125,17 +125,25 @@ def print_standard():
                                             se_name=standard_entry_name))
         print("{preface:20}{se_text}".format(preface="     - Description:",
                                                 se_text=standard_entry_description))
+        print("{preface:20}{se_text}".format(preface="     - Format:",
+                                             se_text=standard_entry_format))
         print("{preface:20}{se_text}".format(preface="     - Unique:",
                                                 se_text=standard_entry_unique))
         print("{preface:20}{se_text}".format(preface="     - Optional:",
                                                 se_text=standard_entry_optional))
-        print("{preface:20}{se_text}".format(preface="     - Format:",
-                                                se_text=standard_entry_format))
+        if 'validator' in standard[standard_key]:
+            standard_entry_validator = standard[standard_key]['validator']
+            print("{preface:20}{se_text}".format(preface="     - Validator:",
+                                                 se_text=standard_entry_validator))
+        if 'argument' in standard[standard_key]:
+            standard_entry_argument = standard[standard_key]['argument']
+            print("{preface:20}{se_text}".format(preface="     - Argument:",
+                                                 se_text=""))
+            for param in standard_entry_argument:
+                print("{preface:20}{se_text}".format(preface="       - " + param + ": ",
+                                                     se_text=standard_entry_argument[param]))
+        print()
 
-        if 'value' in standard[standard_key]:
-            standard_entry_value = standard[standard_key]['value']
-            print("{preface:20}{se_text}".format(preface="     - Value:",
-                                                 se_text=standard_entry_value))
 
 def __call_validator(options):
     paths_to_validate = get_paths_to_validate(options.paths,
