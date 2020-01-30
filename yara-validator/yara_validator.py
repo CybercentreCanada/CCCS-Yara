@@ -423,7 +423,7 @@ class YaraValidator:
             return valid
 
         if not self.is_ascii(rule_to_validate_string):
-            valid.update_validity(False, ASCII, "There are None ASCII Characters Present in the Rule.")
+            valid.update_validity(False, ASCII, "There are Non-ASCII Characters Present in the Rule.")
             return valid
 
         if SCOPES in rule_to_validate:
