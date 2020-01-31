@@ -374,7 +374,7 @@ class YaraValidator:
             return valid
 
         if not self.is_ascii(rule_to_validate_string):
-            valid.update_validity(False, ASCII, "There are None ASCII Characters Present in the Rule.")
+            valid.update_validity(False, ASCII, "There are Non-ASCII Characters Present in the Rule.")
             return valid
 
         if SCOPES in rule_to_validate:
@@ -917,7 +917,7 @@ class YaraValidator:
 
         return self.required_fields[CATEGORY].valid
 
-    def valid_rule_type(self, rule_to_validate_type, tag_index, tag_key):
+    def valid_category_type(self, rule_to_validate_type, tag_index, tag_key):
         """
         This will be called by the new tag created by the valid_category function. Because it references the same object
             as that initialized as CATEGORY_TYPE we can use that to reference the reqired tag in this function.
@@ -1269,8 +1269,8 @@ class YaraValidator:
         # parameters for creating a TagAttributes instance
         tag_max_count = None
         tag_optional = None
-        tag_validator = self.valid_regex  # default validator if not provided in the configuration
-        tag_argument = {"regexExpression": UNVALIDATED_REGEX}  # default argument (regex expression) for default validator
+        tag_validator = None
+        tag_argument = None
 
         # check if the tag is optional
         optional = params.get("optional")
@@ -1292,11 +1292,9 @@ class YaraValidator:
         unique = params.get("unique")
         if unique is not None:
             if unique is True or re.fullmatch("(?i)^y$|yes", str(unique)):
-                tag_max_count = 1   # tag_max_count = TagAtt.UNIQUE
+                tag_max_count = 1
             elif unique is False or re.fullmatch("(?i)^n$|no", str(unique)):
-                tag_max_count = -1  # tag_max_count = TagAtt.NONUNIQUE
-            elif re.fullmatch("(?i)limited", str(unique)):
-                tag_max_count = 2   # tag_max_count = TagAtt.LIMITED
+                tag_max_count = -1
             elif isinstance(unique, int):
                 tag_max_count = unique
             else:
@@ -1317,7 +1315,8 @@ class YaraValidator:
 
             if tag_validator == self.valid_regex:  # argument must have "regex expression" parameter when using "valid_regex"
                 if tag_argument is None:  # if argument field is empty or does not exist
-                    tag_argument = {"regexExpression": UNVALIDATED_REGEX}
+                    print("CCCS_Yara.yml: \"" + tag + "\" has a missing parameter - argument")
+                    exit(1)
 
                 elif isinstance(tag_argument, dict):
                     input_fileName = tag_argument.get("fileName")
@@ -1347,10 +1346,15 @@ class YaraValidator:
                             else:
                                 print("CCCS_Yara.yml: \"" + tag + "\" is missing a parameter - fileName")
                                 exit(1)
-
+                        elif not input_regexExpression:
+                            print("CCCS_Yara.yml: \"" + tag + "\" is missing a parameter - regexExpression")
+                            exit(1)
                 else:
                     print("CCCS_Yara.yml: \"" + tag + "\" has a parameter with invalid format - argument")
                     exit(1)
+        else:
+            print("CCCS_Yara.yml: \"" + tag + "\" has a missing parameter - validator")
+            exit(1)
 
         return TagAttributes(tag_validator, tag_optional, tag_max_count, tag_position, tag_argument)
 
@@ -1387,7 +1391,7 @@ class YaraValidator:
             "valid_last_modified": self.valid_last_modified,
             "valid_source": self.valid_source,
             "valid_category": self.valid_category,
-            "valid_rule_type": self.valid_rule_type,
+            "valid_category_type": self.valid_category_type,
             "valid_mitre_att": self.valid_mitre_att,
             "valid_actor": self.valid_actor,
             "mitre_group_generator": self.mitre_group_generator,
