@@ -29,7 +29,7 @@ from cfg.filter_casefold import FilterCasefold
 # set current working directory
 SCRIPT_LOCATION = Path(__file__).resolve().parent
 MITRE_STIX_DATA_PATH= SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
-VALIDATOR_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_Yara_Values.yml'
+VALIDATOR_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_Yara_values.yml'
 
 # constants to deal with various required string comparisons
 SCOPES = 'scopes'
@@ -423,7 +423,7 @@ class YaraValidator:
             return valid
 
         if not self.is_ascii(rule_to_validate_string):
-            valid.update_validity(False, ASCII, "There are None ASCII Characters Present in the Rule.")
+            valid.update_validity(False, ASCII, "There are Non-ASCII Characters Present in the Rule.")
             return valid
 
         if SCOPES in rule_to_validate:
