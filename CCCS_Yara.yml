@@ -7,7 +7,7 @@
 #    format: <format of the tag value>
 #    unique: Yes | No | <integer value>
 #    optional: Yes | No | Optional
-#    validator: <name of validator function defined in "yara_validator.py">
+#    validator: <name of validator function defined in "validator_functions.py">
 #    argument:
 #        fileName: <YAML file>
 #        valueName: <value name>
@@ -29,7 +29,7 @@
 #                               (currently only supported by "valid_uuid", "valid_fingerprint", "valid_version",
 #                                                                 "valid_first_imported" and "valid_last_modified")
 #  -> validator:
-#        - <name of validator function defined in "yara_validator.py">: this function will be called to validate the tag
+#        - <name of validator function defined in "validator_functions.py">: this function will be called to validate the tag
 #  -> argument:
 #        - fileName: regex expressions from the given file will be used to validate the tag (mutually exclusive with regexExpression)
 #        - valueName: regex expressions under "valueName" of the given file will be used(mutually exclusive with regexExpression)
@@ -41,9 +41,9 @@
 # --NOTE--
 # 1. "unique" and "optional" are required fields.
 # 2. If "valid_regex" is used as a validator, "fileName"/"valueName" or "regexExpression" must be provided.
-# 3. Custom validators should be defined in yara_validator.py and included in self.validators of YaraValidator class
+# 3. Custom validators should be defined in validator_functions.py and included in self.names of Validators class
 # 4. Child tags create TagAttributes instances as temporary place holders in self.required_fields and validators for child tags
-#    should use the place holders to create the actual TagAttributes instances in self.required_fields_children.
+#    should use the place holders to create the actual TagAttributes instances in self.required_fields_children of yara_validator.py (YaraValidator class).
 # 5. There are reserved parameters for "argument" such as fileName, valueName, regexExpression, child, parent and child_place_holder
 #
 # --EXAMPLE--
