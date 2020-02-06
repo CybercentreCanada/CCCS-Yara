@@ -256,10 +256,7 @@ vol_script:
    format: 'unvalidated'
    unique: Yes
    optional: Yes
-   validator: valid_regex
-   argument:
-      fileName: CCCS_Yara_values.yml
-      valueName: unvalidated_regex
+   validator: None
 
 al_configdumper:
    description: 'Used by Assembly Line'
@@ -280,27 +277,18 @@ al_*:
    format: 'unvalidated'
    unique: Yes
    optional: Yes
-   validator: valid_regex
-   argument:
-      fileName: CCCS_Yara_values.yml
-      valueName: unvalidated_regex
+   validator: None
 
 credit:
    description: 'Used when the autor would like credit for the rule'
    format: 'unvalidated'
    unique: No
    optional: Yes
-   validator: valid_regex
-   argument:
-      fileName: CCCS_Yara_values.yml
-      valueName: unvalidated_regex
+   validator: None
 
 original_*:
    description: 'For rules converted from other sources so that we preserve the original metadata'
    format: 'unvalidated'
    unique: No
    optional: Yes
-   validator: valid_regex
-   argument:
-      fileName: CCCS_Yara_values.yml
-      valueName: unvalidated_regex
+   validator: None
