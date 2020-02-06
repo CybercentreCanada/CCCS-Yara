@@ -39,6 +39,7 @@ class Validators:
         self.category_types = None
         self.mitre_group_alias = None
         self.names = {
+            "None": self.valid_none,
             "valid_regex": self.valid_regex,
             "valid_uuid": self.valid_uuid,
             "valid_fingerprint": self.valid_fingerprint,
@@ -61,7 +62,13 @@ class Validators:
         self.required_fields_children = required_fields_children
         self.category_types = category_types
         self.mitre_group_alias = mitre_group_alias
-    
+
+    def valid_none(self, rule_to_validate, tag_index, tag_key):
+        self.required_fields[tag_key].attributefound()
+        self.required_fields_index[self.required_fields[tag_key].position].increment_count()
+        self.required_fields[tag_key].attributevalid()
+        return True
+
     def valid_regex(self, rule_to_validate, tag_index, tag_key):
         """
         Validates the metadata tag using provided regex expression
