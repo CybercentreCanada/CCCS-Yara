@@ -146,3 +146,11 @@ hash_types:
       value: "(?i)[a-f0-9]{40}"
    -
       value: "(?i)[a-f0-9]{64}"
+
+unvalidated_regex:
+   -
+      value: ".*"
+
+universal_regex:
+   -
+      value: '[^a-z]*'
