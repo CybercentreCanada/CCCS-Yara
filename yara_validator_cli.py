@@ -162,7 +162,7 @@ def __call_validator(options):
             print("{message:40}{y_file}".format(message="Validating Rule file:",
                                                 y_file=yara_rule_path))
 
-        rule_return = yara_validator.run_yara_validator(yara_rule_path)
+        yara_file_processor = yara_validator.run_yara_validator(yara_rule_path)
         what_will_be_done = "make no changes"
         yara_file_output = None
 
@@ -175,10 +175,10 @@ def __call_validator(options):
             what_will_be_done = "modify the file in place."
 
         # Prints the output of the validator.
-        if not rule_return.rule_validity:
+        if not yara_file_processor.rule_return.rule_validity:
             # The rule is invalid
 
-            all_invalid_rule_returns.append((yara_rule_path, rule_return))
+            all_invalid_rule_returns.append((yara_rule_path, yara_file_processor.rule_return))
 
             puts(colored.red("{message:39}{y_file}".format(message="🍩 Invalid Rule File:",
                                                            y_file=yara_rule_path)))
@@ -187,21 +187,21 @@ def __call_validator(options):
                 print("     - Would {message}".format(message=what_will_be_done))
 
             if options.verbose or options.veryverbose:
-                print_errors(rule_return, options)
-                print_warnings(rule_return, options)
+                print_errors(yara_file_processor.rule_return, options)
+                print_warnings(yara_file_processor.rule_return, options)
 
-        elif rule_return.rule_warnings and not options.warnings:
+        elif yara_file_processor.rule_return.rule_warnings and not options.warnings:
             # The rule is valid, has warnings and warning are turned on
 
-            all_warning_rule_returns.append((yara_rule_path, rule_return))
+            all_warning_rule_returns.append((yara_rule_path, yara_file_processor.rule_return))
 
             puts(colored.yellow("{message:38}{y_file}".format(message="   Warnings in Rule File:",
                                                               y_file=yara_rule_path)))
 
             if options.verbose or options.veryverbose:
-                print_warnings(rule_return, options)
+                print_warnings(yara_file_processor.rule_return, options)
 
-        elif rule_return.rule_validity:
+        elif yara_file_processor.rule_return.rule_validity:
             # The rule is valid with no warnings or has warnings and warnings are turned off
 
             if not options.fail:
@@ -210,7 +210,8 @@ def __call_validator(options):
             if options.nochanges:
                 print("     - Would {message}".format(message=what_will_be_done))
             elif options.inplace or options.createfile:
-                overwrite_file(yara_file_output, rule_return.return_validated_rule())
+                yara_file_processor.string_of_rule_to_original_file()
+                overwrite_file(yara_file_output, yara_file_processor.return_edited_rule_string())
 
         else:
             print("Danger Will Robinson! Danger!"

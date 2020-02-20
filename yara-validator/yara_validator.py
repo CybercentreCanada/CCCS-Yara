@@ -9,6 +9,7 @@ from stix2 import FileSystemSource
 from stix2 import Filter
 from cfg.filter_casefold import FilterCasefold
 from validator_functions import Validators, TagOpt
+from yara_file_processor import YaraFileProcessor, YaraRule
 
 # set current working directory
 SCRIPT_LOCATION = Path(__file__).resolve().parent
@@ -37,21 +38,16 @@ def run_yara_validator(yara_file):
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string representation
         of the yara file to YaraValidator.valadation
-
-        NOTE the current function assumes one rule per file and will only process the first rule found.
     :param yara_file:
     :return:
     """
-    validator = YaraValidator()
+    yara_file_processor = YaraFileProcessor(yara_file)
 
-    parser = plyara.Plyara()
-    yara_rule_file = open(yara_file, encoding='utf-8')
-    yara_rule_file_string = yara_rule_file.read()
-    rule0 = parser.parse_string(yara_rule_file_string)[0]
-    yara_rule_file.close()
-    rule_return = validator.validation(rule0, yara_rule_file_string)
+    for rule in yara_file_processor.yara_rules:
+        validator = YaraValidator()
+        rule.add_rule_return(validator.validation(rule.rule_plyara, rule.rule_string))
 
-    return rule_return
+    return yara_file_processor
 
 class YaraValidatorReturn:
     """
