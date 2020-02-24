@@ -6,7 +6,7 @@ clint==0.5.1
 idna==2.8
 packaging==19.0
 ply==3.11
-plyara==2.0.2
+plyara==2.0.3
 pyparsing==2.4.0
 python-baseconv==1.2.2
 python-dateutil==2.8.0
