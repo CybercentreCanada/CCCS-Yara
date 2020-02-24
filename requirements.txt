@@ -17,4 +17,4 @@ simplejson==3.16.0
 six==1.12.0
 stix2==1.1.2
 stix2-patterns==1.1.0
-urllib3==1.25.3
+urllib3==1.25.8
