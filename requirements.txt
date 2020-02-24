@@ -4,7 +4,7 @@ certifi==2019.6.16
 chardet==3.0.4
 clint==0.5.1
 idna==2.8
-packaging==19.0
+packaging==20.1
 ply==3.11
 plyara==2.0.2
 pyparsing==2.4.0
