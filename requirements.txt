@@ -3,7 +3,7 @@ args==0.1.0
 certifi==2019.6.16
 chardet==3.0.4
 clint==0.5.1
-idna==2.8
+idna==2.9
 packaging==19.0
 ply==3.11
 plyara==2.0.2
