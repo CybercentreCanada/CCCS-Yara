@@ -1,6 +1,6 @@
 antlr4-python3-runtime==4.7.2
 args==0.1.0
-certifi==2019.6.16
+certifi==2019.11.28
 chardet==3.0.4
 clint==0.5.1
 idna==2.8
