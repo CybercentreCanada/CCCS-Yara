@@ -180,7 +180,7 @@ info|exploit|technique|tool|malware:
    description: 'Specific information about the category'
    format: 'uppercase'
    unique: Yes
-   optional: No
+   optional: Yes
    validator: valid_category_type
    argument:
       parent: category

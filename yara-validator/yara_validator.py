@@ -31,7 +31,7 @@ AUTHOR = 'author'
 
 
 """
-RUN THE VALIDATOR BY CALLING THIS FUNCTION IF YOU ARE NOT USING THE cccs_yara.py script
+RUN THE VALIDATOR BY CALLING THIS FUNCTION IF YOU ARE NOT USING THE yara_validator_cli.py script
 """
 def run_yara_validator(yara_file):
     """
