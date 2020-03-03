@@ -52,7 +52,10 @@ class YaraFileProcessor:
         yara_rules_reversed.reverse()
         for rule in yara_rules_reversed:
             if rule.rule_return:
-                changed_rule_string = rule.rule_return.validated_rule.splitlines()
+                if isinstance(rule.rule_return, YaraReturn):
+                    changed_rule_string = rule.rule_return.edited_rule.splitlines()
+                else:
+                    changed_rule_string = rule.rule_return.validated_rule.splitlines()
                 edited_rule_string = edited_rule_string[0:rule.rule_plyara['start_line'] - 1]\
                                         + changed_rule_string + edited_rule_string[rule.rule_plyara['stop_line']:]
 
