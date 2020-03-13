@@ -95,12 +95,19 @@ version:
    optional: Optional
    validator: valid_version
 
+creation_date:
+   description: 'Date stamp of when the rule was created'
+   format: 'YYYY-MM-DD'
+   unique: Yes
+   optional: Yes
+   validator: valid_date
+
 first_imported:
    description: 'Date stamp of when the rule was added'
    format: 'YYYY-MM-DD'
    unique: Yes
    optional: Optional
-   validator: valid_first_imported
+   validator: valid_date
 
 last_modified:
    description: 'Last modified date'
@@ -179,7 +186,7 @@ category:
 info|exploit|technique|tool|malware:
    description: 'Specific information about the category'
    format: 'uppercase'
-   unique: Yes
+   unique: No
    optional: Yes
    validator: valid_category_type
    argument:

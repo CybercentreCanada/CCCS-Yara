@@ -175,6 +175,10 @@ def __call_validator(options):
             what_will_be_done = "modify the file in place."
 
         # Prints the output of the validator.
+
+        #######
+        #    Need to adjust to handle multi rule files
+        #######
         if not yara_file_processor.rule_return.rule_validity:
             # The rule is invalid
 
