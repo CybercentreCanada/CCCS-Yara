@@ -74,6 +74,30 @@ class YaraFileProcessor:
     def return_edited_rule_string(self):
         return self.edited_rule_string
 
+    def return_rule_error_state(self):
+        """
+        Loops through the self.yara_rules array and returns true if any of the rules are in an error state
+        :return:
+        """
+        error_state = False
+        for yara_rule in self.yara_rules:
+            if yara_rule.return_error():
+                error_state = True
+
+        return error_state
+
+    def return_rule_warning_state(self):
+        """
+        Loops through the self.yara_rules array and returns true if any of the rules are in a warning state
+        :return:
+        """
+        warning_state = False
+        for yara_rule in self.yara_rules:
+            if yara_rule.return_warning():
+                warning_state = True
+
+        return warning_state
+
 class YaraRule:
     """
     YaraRule objects contain a string representation of a rule, a plyara representation of the rule and the RuleReturn
@@ -87,6 +111,15 @@ class YaraRule:
 
     def add_rule_return(self, rule_return):
         self.rule_return = rule_return
+
+    def return_error(self):
+        return self.rule_return.error_state()
+
+    def return_warning(self):
+        return self.rule_return.warning_state()
+
+    def return_rule_return(self):
+        return self.rule_return
 
 class YaraReturn:
     """
@@ -138,6 +171,9 @@ class YaraReturn:
 
         return return_string
 
+    def error_state(self):
+        return self.rule_errors
+
     def return_errors(self):
         error_string = ""
         if not self.rule_errors:
@@ -151,6 +187,9 @@ class YaraReturn:
             error_string = self.__build_return_string_cmlt(self.errors)
 
         return error_string
+
+    def warning_state(self):
+        return self.rule_warnings
 
     def return_warnings(self):
         warning_string = ""
