@@ -20,7 +20,7 @@ METADATA = 'metadata'
 BASE62_REGEX = "^[0-9a-zA-z]+$"
 UNIVERSAL_REGEX = '^[^a-z]*$'
 OPENSOURCE_REGEX = '^OPENSOURCE$'
-CATEGORY_TYPE_REGEX = '^[A-Z\- 0-9_]*$'
+CATEGORY_TYPE_REGEX = '^[A-Z\-. 0-9_]*$'
 MITRE_GROUP_NAME = 'name'
 
 
@@ -448,7 +448,7 @@ class Validators:
         ACTOR_TYPE = self.required_fields[ACTOR].argument.get("required")
         child_tag = self.required_fields[ACTOR].argument.get("child")
         child_tag_place_holder = self.required_fields[ACTOR].argument.get("child_place_holder")
-        mitre_group_alias_regex = "^[A-Z 0-9\.-]+$"
+        mitre_group_alias_regex = "^[A-Z 0-9\s._-]+$"
 
         self.required_fields[ACTOR].attributefound()
         self.required_fields_index[self.required_fields[ACTOR].position].increment_count()
