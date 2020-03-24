@@ -113,6 +113,9 @@ class YaraValidatorReturn:
 
         return error_string
 
+    def warning_state(self):
+        return self.rule_warnings
+
     def return_warnings(self):
         warning_string = ""
         if self.rule_warnings:

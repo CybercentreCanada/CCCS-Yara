@@ -80,11 +80,55 @@ class YaraFileProcessor:
         :return:
         """
         error_state = False
-        for yara_rule in self.yara_rules:
-            if yara_rule.return_error():
-                error_state = True
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if isinstance(rule.rule_return, YaraReturn):
+                    if rule.return_error():
+                        error_state = rule.return_error()
+                        break
+                else:
+                    if not rule.rule_return.rule_validity:
+                        error_state = not rule.rule_return.rule_validity
+                        break
 
         return error_state
+
+    def return_rule_errors(self):
+        """
+        Loops throught the self.yara_rules array and returns a string for of errors
+        :return:
+        """
+        error_string = ""
+
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if isinstance(rule.rule_return, YaraReturn):
+                    if rule.return_error():
+                        error_string = error_string + rule.return_errors()
+                else:
+                    if not rule.rule_return.rule_validity:
+                        error_string = error_string + rule.return_errors()
+
+        return error_string
+
+    def return_rule_errors_for_cmlt(self):
+        """
+        Loops throught the self.yara_rules array and returns a string for of errors in cmlt format
+        :return:
+        """
+        error_string = ""
+
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if isinstance(rule.rule_return, YaraReturn):
+                    if rule.return_error():
+                        error_string = error_string + rule.rule_plyara["rule_name"] + "\n"
+                        error_string = error_string + rule.return_errors_for_cmlt()
+                else:
+                    if not rule.rule_return.rule_validity:
+                        error_string = error_string + rule.return_errors_for_cmlt()
+
+        return error_string
 
     def return_rule_warning_state(self):
         """
@@ -92,9 +136,11 @@ class YaraFileProcessor:
         :return:
         """
         warning_state = False
-        for yara_rule in self.yara_rules:
-            if yara_rule.return_warning():
-                warning_state = True
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if rule.return_warning():
+                    warning_state = True
+                    break
 
         return warning_state
 
@@ -115,8 +161,42 @@ class YaraRule:
     def return_error(self):
         return self.rule_return.error_state()
 
+    def return_errors(self):
+        error_string = ""
+
+        if self.rule_return.error_state():
+            error_string = self.rule_return.return_errors()
+            if error_string:
+                error_string = error_string + "\n"
+
+        return error_string
+
+    def return_errors_for_cmlt(self):
+        error_string = ""
+
+        if self.rule_return.error_state():
+            error_string = self.rule_return.return_errors_for_cmlt()
+            if error_string:
+                error_string = error_string + "\n"
+
+        return error_string
+
     def return_warning(self):
         return self.rule_return.warning_state()
+
+    def return_warnings(self):
+        warning_string = ""
+        if self.rule_return.warning_state():
+            warning_string = self.rule_return.return_warnings()
+
+        return warning_string
+
+    def return_warnings_for_cmlt(self):
+        warning_string = ""
+        if self.rule_return.warning_state():
+            warning_string = self.rule_return.return_warnings_for_cmlt()
+
+        return warning_string
 
     def return_rule_return(self):
         return self.rule_return
@@ -176,14 +256,14 @@ class YaraReturn:
 
     def return_errors(self):
         error_string = ""
-        if not self.rule_errors:
+        if self.rule_errors:
             error_string = self.__build_return_string(self.errors)
 
         return error_string
 
     def return_errors_for_cmlt(self):
         error_string = ""
-        if not self.rule_errors:
+        if self.rule_errors:
             error_string = self.__build_return_string_cmlt(self.errors)
 
         return error_string
