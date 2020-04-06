@@ -7,7 +7,7 @@ idna==2.8
 packaging==19.0
 ply==3.11
 plyara==2.0.2
-pyparsing==2.4.0
+pyparsing==2.4.7
 python-baseconv==1.2.2
 python-dateutil==2.8.0
 pytz==2019.2
