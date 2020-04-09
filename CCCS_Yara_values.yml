@@ -11,11 +11,11 @@ rule_statuses:
 
 sharing_classifications:
    - 
-      value: 'TLP:WHITE'
+      value: 'TLP:WHITE|TLP:WHITE//COMMERCIAL'
    -
-      value: 'TLP:GREEN'
+      value: 'TLP:GREEN|TLP:GREEN//COMMERCIAL'
    -
-      value: 'TLP:AMBER'
+      value: 'TLP:AMBER|TLP:AMBER//COMMERCIAL'
  
 category_types:
    -
