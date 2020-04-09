@@ -20,7 +20,7 @@ METADATA = 'metadata'
 BASE62_REGEX = "^[0-9a-zA-z]+$"
 UNIVERSAL_REGEX = '^[^a-z]*$'
 OPENSOURCE_REGEX = '^OPENSOURCE$'
-CATEGORY_TYPE_REGEX = '^[A-Z\- 0-9_]*$'
+CATEGORY_TYPE_REGEX = '^[A-Z\-. 0-9_]*$'
 MITRE_GROUP_NAME = 'name'
 
 
@@ -44,7 +44,7 @@ class Validators:
             "valid_uuid": self.valid_uuid,
             "valid_fingerprint": self.valid_fingerprint,
             "valid_version": self.valid_version,
-            "valid_first_imported": self.valid_first_imported,
+            "valid_date": self.valid_date,
             "valid_last_modified": self.valid_last_modified,
             "valid_source": self.valid_source,
             "valid_category": self.valid_category,
@@ -184,6 +184,37 @@ class Validators:
             self.required_fields[VERSION].attributevalid()
 
         return self.required_fields[VERSION].valid
+
+    def valid_date(self, rule_to_date_check, tag_index, tag_key):
+        """
+        This value can be generated: there is the option to verify if an existing date is correct, insert a generated
+            date if none was found and if the potential default metadata index would be out of bounds appends
+            a generated date
+        :param rule_to_date_check: the plyara parsed rule that is being validated
+        :param tag_index: used to reference what the array index of the last_modified metadata tag is
+        :param tag_key: the name of the metadata tag that is being processed
+        :return: True if the value matches the valid date format and False if it does not match it
+        """
+        DATE = tag_key
+        self.required_fields[DATE].attributefound()
+        self.required_fields_index[self.required_fields[DATE].position].increment_count()
+
+        if Helper.valid_metadata_index(rule_to_date_check, tag_index):
+            if list(rule_to_date_check[METADATA][tag_index].keys())[0] == DATE:
+                if Helper.validate_date(list(rule_to_date_check[METADATA][tag_index].values())[0]):
+                    self.required_fields[DATE].attributevalid()
+                else:
+                    self.required_fields[DATE].attributeinvalid()
+            else:
+                rule_date = {DATE: Helper.current_valid_date()}
+                rule_to_date_check[METADATA].insert(tag_index, rule_date)
+                self.required_fields[DATE].attributevalid()
+        else:
+            rule_date = {DATE: Helper.current_valid_date()}
+            rule_to_date_check[METADATA].append(rule_date)
+            self.required_fields[DATE].attributevalid()
+
+        return self.required_fields[DATE].valid
 
     def valid_first_imported(self, rule_to_date_check, tag_index, tag_key):
         """
@@ -417,7 +448,7 @@ class Validators:
         ACTOR_TYPE = self.required_fields[ACTOR].argument.get("required")
         child_tag = self.required_fields[ACTOR].argument.get("child")
         child_tag_place_holder = self.required_fields[ACTOR].argument.get("child_place_holder")
-        mitre_group_alias_regex = "^[A-Z 0-9\.-]+$"
+        mitre_group_alias_regex = "^[A-Z 0-9\s._-]+$"
 
         self.required_fields[ACTOR].attributefound()
         self.required_fields_index[self.required_fields[ACTOR].position].increment_count()
