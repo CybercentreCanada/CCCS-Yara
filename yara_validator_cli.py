@@ -48,10 +48,12 @@ parser_group.add_argument('-i', '--in-place', action='store_true', default=False
 parser_group.add_argument('-c', '--create-files', action='store_true', default=False, dest='createfile',
                           help="Writes a new file for each valid file, mutually exclusive with -i.")
 
+
 def parse_args():
     options = parser.parse_args()
 
     return options
+
 
 def get_yara_paths_from_dir(directory, recursive):
     """ Recursively get yara rules from a directory """
@@ -65,6 +67,7 @@ def get_yara_paths_from_dir(directory, recursive):
             elif path.is_dir() and recursive:
                 for sub_dir_path in get_yara_paths_from_dir(path, recursive):
                     yield sub_dir_path
+
 
 def get_paths_to_validate(options_paths, recursive):
     """ Returns a set of pathlib.Path objects for all
@@ -96,9 +99,11 @@ def get_yara_file_new_path(path):
         new_name = YARA_VALID_PREFIX + path.name
         return path.parent / new_name
 
+
 def overwrite_file(path, content):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(content)
+
 
 def print_errors(rule_return, options):
     if not rule_return.rule_validity:
@@ -109,6 +114,7 @@ def print_warnings(rule_return, options):
     if rule_return.rule_warnings and not options.warnings:
         print(colored.yellow("{indent:>7}{message}".format(indent="- ", message="Warnings:")))
         print(colored.white(rule_return.return_warnings_for_cmlt()))
+
 
 def print_standard():
     print("Printing the CCCS YARA Standard:")
@@ -260,9 +266,11 @@ def __call_validator(options):
     if total_invalid_yara_rule_paths >= 1:
         exit(99)
 
+
 def git_ci(changed_file_paths):
     options = parser.parse_args(changed_file_paths)
     __call_validator(options)
+
 
 def main():
     print('''\
@@ -277,6 +285,7 @@ def main():
     options = parse_args()
 
     __call_validator(options)
+
 
 if __name__ == "__main__":
     main()
