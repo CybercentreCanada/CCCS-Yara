@@ -188,7 +188,11 @@ def __call_validator(options):
         if yara_file_processor.return_rule_error_state():
             # The rule is invalid
 
-            all_invalid_rule_returns.append((yara_rule_path, yara_file_processor.rule_return))
+            test = yara_file_processor.return_rule_errors_for_cmlt()
+            test2 = yara_file_processor.return_rule_errors()
+            test3 = yara_file_processor.return_rule_warnings_for_cmlt()
+            test4 = yara_file_processor.return_rule_warnings()
+            all_invalid_rule_returns.append((yara_rule_path, yara_file_processor))
 
             puts(colored.red("{message:39}{y_file}".format(message="🍩 Invalid Rule File:",
                                                            y_file=yara_rule_path)))

@@ -144,6 +144,34 @@ class YaraFileProcessor:
 
         return warning_state
 
+    def return_rule_warnings(self):
+        """
+        Loops throught the self.yara_rules array and returns a string for of warnings
+        :return:
+        """
+        warning_string = ""
+
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if rule.return_warning():
+                    warning_string = warning_string + rule.return_warnings()
+
+        return warning_string
+
+    def return_rule_warnings_for_cmlt(self):
+        """
+        Loops throught the self.yara_rules array and returns a string for of warnings in cmlt format
+        :return:
+        """
+        warning_string = ""
+
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if rule.return_warning():
+                    warning_string = warning_string + rule.return_warnings_for_cmlt()
+
+        return warning_string
+
 class YaraRule:
     """
     YaraRule objects contain a string representation of a rule, a plyara representation of the rule and the RuleReturn
@@ -164,20 +192,32 @@ class YaraRule:
     def return_errors(self):
         error_string = ""
 
-        if self.rule_return.error_state():
-            error_string = self.rule_return.return_errors()
-            if error_string:
-                error_string = error_string + "\n"
+        if isinstance(self.rule_return, YaraReturn):
+            if self.rule_return.error_state():
+                error_string = self.rule_return.return_errors()
+                if error_string:
+                    error_string = error_string + "\n"
+        else:
+            if not self.rule_return.rule_validity:
+                error_string = self.rule_return.return_errors()
+                if error_string:
+                    error_string = error_string + "\n"
 
         return error_string
 
     def return_errors_for_cmlt(self):
         error_string = ""
 
-        if self.rule_return.error_state():
-            error_string = self.rule_return.return_errors_for_cmlt()
-            if error_string:
-                error_string = error_string + "\n"
+        if isinstance(self.rule_return, YaraReturn):
+            if self.rule_return.error_state():
+                error_string = self.rule_return.return_errors_for_cmlt()
+                if error_string:
+                    error_string = error_string + "\n"
+        else:
+            if not self.rule_return.rule_validity:
+                error_string = self.rule_return.return_errors_for_cmlt()
+                if error_string:
+                    error_string = error_string + "\n"
 
         return error_string
 
@@ -188,6 +228,8 @@ class YaraRule:
         warning_string = ""
         if self.rule_return.warning_state():
             warning_string = self.rule_return.return_warnings()
+            if warning_string:
+                warning_string = warning_string + "\n"
 
         return warning_string
 
@@ -195,6 +237,8 @@ class YaraRule:
         warning_string = ""
         if self.rule_return.warning_state():
             warning_string = self.rule_return.return_warnings_for_cmlt()
+            if warning_string:
+                warning_string = warning_string + "\n"
 
         return warning_string
 
