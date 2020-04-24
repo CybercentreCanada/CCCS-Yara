@@ -105,15 +105,16 @@ def overwrite_file(path, content):
         f.write(content)
 
 
-def print_errors(rule_return, options):
-    if not rule_return.rule_validity:
+def print_errors(yara_file_processor, options):
+    if yara_file_processor.return_rule_error_state():
         print(colored.red("{indent:>7}{message}".format(indent="- ", message="Errors:")))
-        print(colored.white(rule_return.return_errors_for_cmlt()))
+        print(colored.white(yara_file_processor.return_rule_errors_for_cmlt()))
 
-def print_warnings(rule_return, options):
-    if rule_return.rule_warnings and not options.warnings:
+
+def print_warnings(yara_file_processor, options):
+    if yara_file_processor.return_rule_warning_state and not options.warnings:
         print(colored.yellow("{indent:>7}{message}".format(indent="- ", message="Warnings:")))
-        print(colored.white(rule_return.return_warnings_for_cmlt()))
+        print(colored.white(yara_file_processor.return_rule_warnings_for_cmlt()))
 
 
 def print_standard():
@@ -201,21 +202,21 @@ def __call_validator(options):
                 print("     - Would {message}".format(message=what_will_be_done))
 
             if options.verbose or options.veryverbose:
-                print_errors(yara_file_processor.rule_return, options)
-                print_warnings(yara_file_processor.rule_return, options)
+                print_errors(yara_file_processor, options)
+                print_warnings(yara_file_processor, options)
 
         elif yara_file_processor.return_rule_warning_state() and not options.warnings:
             # The rule is valid, has warnings and warning are turned on
 
-            all_warning_rule_returns.append((yara_rule_path, yara_file_processor.rule_return))
+            all_warning_rule_returns.append((yara_rule_path, yara_file_processor))
 
             puts(colored.yellow("{message:38}{y_file}".format(message="   Warnings in Rule File:",
                                                               y_file=yara_rule_path)))
 
             if options.verbose or options.veryverbose:
-                print_warnings(yara_file_processor.rule_return, options)
+                print_warnings(yara_file_processor, options)
 
-        elif yara_file_processor.rule_return.rule_validity:
+        elif not yara_file_processor.return_rule_error_state():
             # The rule is valid with no warnings or has warnings and warnings are turned off
 
             if not options.fail:
@@ -242,8 +243,8 @@ def __call_validator(options):
             {rule_errors}
             {original_rule}
             ----------------------------------------------------------------------------
-            """).format(rule_warnings=invalid_rule_return.return_warnings_for_cmlt(),
-                        rule_errors=invalid_rule_return.return_errors_for_cmlt(),
+            """).format(rule_warnings=invalid_rule_return.return_rule_warnings_for_cmlt(),
+                        rule_errors=invalid_rule_return.return_rule_errors_for_cmlt(),
                         original_rule=invalid_rule_return.return_original_rule(),
                         invalid_rule_path=invalid_rule_path))
 

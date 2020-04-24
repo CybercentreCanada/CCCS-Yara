@@ -57,7 +57,7 @@ class YaraFileProcessor:
                 else:
                     changed_rule_string = rule.rule_return.validated_rule.splitlines()
                 edited_rule_string = edited_rule_string[0:rule.rule_plyara['start_line'] - 1]\
-                                        + changed_rule_string + edited_rule_string[rule.rule_plyara['stop_line']:]
+                                     + changed_rule_string + edited_rule_string[rule.rule_plyara['stop_line']:]
 
         edited_rule_string = "\n".join(edited_rule_string)
         self.edited_rule_string = edited_rule_string
@@ -122,10 +122,14 @@ class YaraFileProcessor:
             if rule.rule_return:
                 if isinstance(rule.rule_return, YaraReturn):
                     if rule.return_error():
+                        error_string = error_string + "{indent:>8}{name:10}".format(indent="- ",
+                                                                                    name=rule.get_rule_name() + ":\n")
                         error_string = error_string + rule.rule_plyara["rule_name"] + "\n"
                         error_string = error_string + rule.return_errors_for_cmlt()
                 else:
                     if not rule.rule_return.rule_validity:
+                        error_string = error_string + "{indent:>8}{name:10}".format(indent="- ",
+                                                                                    name=rule.get_rule_name() + ":\n")
                         error_string = error_string + rule.return_errors_for_cmlt()
 
         return error_string
@@ -168,9 +172,26 @@ class YaraFileProcessor:
         for rule in self.yara_rules:
             if rule.rule_return:
                 if rule.return_warning():
+                    warning_string = warning_string + "{indent:>8}{name:10}".format(indent="- ",
+                                                                                    name=rule.get_rule_name() + ":\n")
                     warning_string = warning_string + rule.return_warnings_for_cmlt()
 
         return warning_string
+
+    def return_original_rule(self):
+        """
+        Returns the original rule string
+        :return:
+        """
+        return self.original_rule_string
+
+    def return_edited_rule(self):
+        """
+        Returns the edited rule string
+        :return:
+        """
+        return self.edited_rule_string
+
 
 class YaraRule:
     """
@@ -245,6 +266,16 @@ class YaraRule:
     def return_rule_return(self):
         return self.rule_return
 
+    def get_rule_name(self):
+        return str(self.rule_plyara.get("rule_name"))
+
+    def return_original_rule(self):
+        return self.rule_return.return_original_rule()
+
+    def return_edited_rule(self):
+        return self.rule_return.edited_rule()
+
+
 class YaraReturn:
     """
     YaraReturn class used to pass the error state of the processed rules, what metadata tags have issues,
@@ -291,7 +322,8 @@ class YaraReturn:
         for index, tag in enumerate(collection):
             if index > 0:
                 return_string = return_string + "\n"
-            return_string = return_string + "{indent:>9}{tag:30} {collection}".format(indent="- ", tag=tag + ":", collection=collection[tag])
+            return_string = return_string + "{indent:>9}{tag:30} {collection}".format(indent="- ", tag=tag + ":",
+                                                                                      collection=collection[tag])
 
         return return_string
 
