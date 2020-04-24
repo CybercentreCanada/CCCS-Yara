@@ -138,6 +138,8 @@ actor_types:
       value: "APT"
    -
       value: "CRIMEWARE"
+   -
+      value: "FIN"
 
 hash_types:
    -
