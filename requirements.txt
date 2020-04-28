@@ -10,7 +10,7 @@ plyara==2.0.2
 pyparsing==2.4.0
 python-baseconv==1.2.2
 python-dateutil==2.8.0
-pytz==2019.2
+pytz==2020.1
 PyYAML==5.1
 requests==2.22.0
 simplejson==3.16.0
