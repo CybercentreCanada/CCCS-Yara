@@ -140,6 +140,8 @@ class Validators:
         self.required_fields_index[self.required_fields[FINGERPRINT].position].increment_count()
 
         rule_hash = Helper.calculate_rule_hash(rule_to_generate_id)
+        import plyara.utils
+        rule_hash2 = plyara.utils.generate_logic_hash(rule_to_generate_id)
         if rule_hash:
             rule_id = {FINGERPRINT: rule_hash}
             if Helper.valid_metadata_index(rule_to_generate_id, tag_index):
