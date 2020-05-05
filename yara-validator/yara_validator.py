@@ -480,9 +480,9 @@ class YaraValidator:
                 if not self.required_fields[key].found:
                     keys_to_return.append(key)
 
-            if self.__mitre_group_alias() and self.required_fields[ACTOR].found:
-                keys_to_return.append(self.required_fields[ACTOR].argument.get("child_place_holder"))
-            return keys_to_return
+        if self.__mitre_group_alias() and self.required_fields[ACTOR].found:
+            keys_to_return.append(self.required_fields[ACTOR].argument.get("child_place_holder"))
+        return keys_to_return
 
     def __mitre_group_alias(self):
         """
