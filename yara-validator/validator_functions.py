@@ -20,7 +20,7 @@ METADATA = 'metadata'
 BASE62_REGEX = "^[0-9a-zA-z]+$"
 UNIVERSAL_REGEX = '^[^a-z]*$'
 OPENSOURCE_REGEX = '^OPENSOURCE$'
-CATEGORY_TYPE_REGEX = '^[A-Z\-. 0-9_]*$'
+CATEGORY_TYPE_REGEX = '^[A-Z\-. 0-9_+\/]*$'
 MITRE_GROUP_NAME = 'name'
 
 
