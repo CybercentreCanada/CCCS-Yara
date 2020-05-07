@@ -17,7 +17,7 @@ METADATA = 'metadata'
 BASE62_REGEX = r'^[0-9a-zA-z]+$'
 UNIVERSAL_REGEX = r'^[^a-z]*$'
 OPENSOURCE_REGEX = r'^OPENSOURCE$'
-CATEGORY_TYPE_REGEX = r'^[A-Z\-. 0-9_]*$'
+CATEGORY_TYPE_REGEX = r'^[A-Z\-. 0-9_+\/]*$'
 MITRE_GROUP_NAME = 'name'
 
 
@@ -53,13 +53,12 @@ class Validators:
             'valid_al_config_parser': self.valid_al_config_parser
         }
 
-    def update(self, required_fields, required_fields_index, required_fields_children, category_types,
-               mitre_group_alias):
+    def update(self, required_fields, required_fields_index, required_fields_children, category_types):
         self.required_fields = required_fields
         self.required_fields_index = required_fields_index
         self.required_fields_children = required_fields_children
         self.category_types = category_types
-        self.mitre_group_alias = mitre_group_alias
+        self.mitre_group_alias = None
 
     def valid_none(self, rule_to_validate, metadata_index, metadata_key):
         self.required_fields[metadata_key].attributefound()

@@ -294,10 +294,9 @@ class YaraValidator:
         self.required_fields_index = [Positional(i) for i in range(len(self.required_fields))]
 
         self.category_types = self.__parse_scheme('category_types')
-        self.mitre_group_alias = None
         self.required_fields_children = {}
         self.validators.update(self.required_fields, self.required_fields_index, self.required_fields_children,
-                               self.category_types, self.mitre_group_alias)
+                               self.category_types)
         self.warning_functions = [
             self.warning_author_no_report_check,
             self.warning_author_no_hash_check,
@@ -306,7 +305,7 @@ class YaraValidator:
 
     previous_position_values = None
 
-    def reindex_metadata_vals(self):
+    def reindex_metadata_keys(self):
         """
         Reindex the starting index of the positional objects contained in self.required_fields_index. This is so that
             the canonical order is maintained relative to optional and multiple instances of some metadata
@@ -320,29 +319,29 @@ class YaraValidator:
 
             previous_position_values = position.current_values()
 
-    def sort_metadata_vals(self, rule_to_sort):
+    def sort_metadata_keys(self, rule_to_sort):
         """
-        Sorts the array of metadata values for valid rules into the canonical order
+        Sorts the array of metadata keys for valid rules into the canonical order
         :param rule_to_sort: the plyara parsed rule that is being validated
         :return: No return, it simply replaces the rules metadata array with the sorted array
         """
-        metadata_vals = rule_to_sort[METADATA]
-        correct_order = [None] * len(metadata_vals)
+        metadata_key_value_pairs = rule_to_sort[METADATA]
+        correct_order = [None] * len(metadata_key_value_pairs)
         tracking_added = 0
         tracking_left = 0
-        for val in list(metadata_vals):
-            if len(val.keys()) == 1:
-                key = list(val.keys())[0]
-                value = list(val.values())[0]
+        for key_value_pair in list(metadata_key_value_pairs):
+            if len(key_value_pair.keys()) == 1:
+                key = list(key_value_pair.keys())[0]
+                value = list(key_value_pair.values())[0]
 
                 if key in self.required_fields:
                     positional = self.required_fields_index[self.required_fields[key].position]
-                    correct_order[positional.index()] = metadata_vals.pop(tracking_left)
+                    correct_order[positional.index()] = metadata_key_value_pairs.pop(tracking_left)
                     positional.increment_offset()
                     tracking_added = tracking_added + 1
                 elif key in self.required_fields_children:
                     positional = self.required_fields_index[self.required_fields_children[key].position]
-                    correct_order[positional.index()] = metadata_vals.pop(tracking_left)
+                    correct_order[positional.index()] = metadata_key_value_pairs.pop(tracking_left)
                     positional.increment_offset()
                     tracking_added = tracking_added + 1
                 else:
@@ -351,8 +350,8 @@ class YaraValidator:
                 tracking_left = tracking_left + 1
 
         # takes all unrecognized or multivalue metadata and appends them to the end of the array of metadata
-        for val in list(metadata_vals):
-            correct_order[tracking_added] = metadata_vals.pop(0)
+        for key_value_pair in list(metadata_key_value_pairs):
+            correct_order[tracking_added] = key_value_pair.pop(0)
             tracking_added = tracking_added + 1
 
         rule_to_sort[METADATA] = correct_order
@@ -448,8 +447,8 @@ class YaraValidator:
                     valid.update_validity(False, key, 'Too many instances of metadata value.')
 
         if valid.rule_validity:
-            self.reindex_metadata_vals()
-            self.sort_metadata_vals(rule_to_validate)
+            self.reindex_metadata_keys()
+            self.sort_metadata_keys(rule_to_validate)
             valid.set_validated_rule(plyara.utils.rebuild_yara_rule(rule_to_validate))
             valid.rebuild_rule()
 
@@ -521,9 +520,16 @@ class YaraValidator:
                 if not self.required_fields[key].found:
                     keys_to_return.append(key)
 
-        if self.mitre_group_alias and self.required_fields[ACTOR].found:
-            keys_to_return.append(self.required_fields[ACTOR].argument.get('child_place_holder'))
+        if self.__mitre_group_alias() and self.required_fields[ACTOR].found:
+            keys_to_return.append(self.required_fields[ACTOR].argument.get("child_place_holder"))
         return keys_to_return
+
+    def __mitre_group_alias(self):
+        """
+        Private function to return the value of mitre_group_alias which would be set if any actor value was found
+        :return: the value of the validators.mitre_group_alias variable
+        """
+        return self.validators.mitre_group_alias
 
     def __parse_scheme(self, cfg_to_parse):
         cfg_being_parsed = ''
@@ -719,3 +725,4 @@ class YaraValidator:
                                               metadata_in_child_parent_relationship)  # replace the name of child metadata with its place holder
         self.validate_child_parent_metadata(self.yara_config,
                                             metadata_in_child_parent_relationship)  # check if any metadata in child-parent relationship are missing
+
