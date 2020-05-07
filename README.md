@@ -13,22 +13,22 @@ This specification also include fields specific to the [MITRE ATT&CK framework](
 ## Sample rule
 ```
 rule MemoryModule {
-	meta:
-		id = "6O9mUMvPhziJ72IXHf6muZ"
-		fingerprint = "4aa0a23f28698898404d700cb363ddf06dd275f5798815e797113656a2a40ae8"
-		version = "1.0"
-		first_imported = "2020-05-06"
-		last_modified = "2020-05-06"
-		status = "RELEASED"
-		sharing = "TLP:WHITE"
-		source = "CCCS"
-		author = "CCCS"
-		description = "Yara rule to detect usage of MemoryModule Library"
-		category = "TECHNIQUE"
-		technique = "LOADER:MEMORYMODULE"
-		mitre_att = "T1129"
-		report = "TA20-0192"
-		hash = "812bbe8b9acabad05b08add50ee55c883e1f7998f3a7cae273d3f0d572a79adc"
+    meta:
+	id = "6O9mUMvPhziJ72IXHf6muZ"
+	fingerprint = "4aa0a23f28698898404d700cb363ddf06dd275f5798815e797113656a2a40ae8"
+	version = "1.0"
+	first_imported = "2020-05-06"
+	last_modified = "2020-05-06"
+	status = "RELEASED"
+	sharing = "TLP:WHITE"
+	source = "CCCS"
+	author = "CCCS"
+	description = "Yara rule to detect usage of MemoryModule Library"
+	category = "TECHNIQUE"
+	technique = "LOADER:MEMORYMODULE"
+	mitre_att = "T1129"
+	report = "TA20-0192"
+	hash = "812bbe8b9acabad05b08add50ee55c883e1f7998f3a7cae273d3f0d572a79adc"
 
     strings:
         $func_ptr =    {55 8B EC 6A 00 68 [3] 00 68 [3] 00 68 [3] 00 68 [3] 00 68 [3] 00}
@@ -72,22 +72,22 @@ Ce standard pour les méta données inclus aussi des champs spécifique au [MITR
 ## Exemple
 ```
 rule MemoryModule {
-	meta:
-		id = "6O9mUMvPhziJ72IXHf6muZ"
-		fingerprint = "4aa0a23f28698898404d700cb363ddf06dd275f5798815e797113656a2a40ae8"
-		version = "1.0"
-		first_imported = "2020-05-06"
-		last_modified = "2020-05-06"
-		status = "RELEASED"
-		sharing = "TLP:WHITE"
-		source = "CCCS"
-		author = "CCCS"
-		description = "Yara rule to detect usage of MemoryModule Library"
-		category = "TECHNIQUE"
-		technique = "LOADER:MEMORYMODULE"
-		mitre_att = "T1129"
-		report = "TA20-0192"
-		hash = "812bbe8b9acabad05b08add50ee55c883e1f7998f3a7cae273d3f0d572a79adc"
+    meta:
+	id = "6O9mUMvPhziJ72IXHf6muZ"
+	fingerprint = "4aa0a23f28698898404d700cb363ddf06dd275f5798815e797113656a2a40ae8"
+	version = "1.0"
+	first_imported = "2020-05-06"
+	last_modified = "2020-05-06"
+	status = "RELEASED"
+	sharing = "TLP:WHITE"
+	source = "CCCS"
+	author = "CCCS"
+	description = "Yara rule to detect usage of MemoryModule Library"
+	category = "TECHNIQUE"
+	technique = "LOADER:MEMORYMODULE"
+	mitre_att = "T1129"
+	report = "TA20-0192"
+	hash = "812bbe8b9acabad05b08add50ee55c883e1f7998f3a7cae273d3f0d572a79adc"
 
     strings:
         $func_ptr =    {55 8B EC 6A 00 68 [3] 00 68 [3] 00 68 [3] 00 68 [3] 00 68 [3] 00}
