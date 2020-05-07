@@ -57,6 +57,56 @@ yara_validator_cli.py:	This is a command line interface utility. It takes a file
 
 Note: the library and the cli are currently designed with the assumption that each file has a single yara rule in it.
 
+## Requirements
+
+Python 3.6+
+
+All required python packages are in the requirements.txt
+
+The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository:
+```
+git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
+ ```
+ 
+## yara_validator_cli.py usage
+
+```
+yara_validator_cli.py -h 
+     ____ ____ ____ ____   __   __ _    ____      _    
+    / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \   
+   | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \  
+   | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
+    \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
+    
+usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s]
+                             [-i | -c]
+                             paths [paths ...]
+
+CCCS YARA script to run the CCCS YARA validator, if the -i or -c flags are not
+provided no changes will be made to the files.
+
+positional arguments:
+  paths                A list of files or folders to be analyzed.
+
+optional arguments:
+  -h, --help           show this help message and exit
+  -r, --recursive      Recursively search folders provided.
+  -n, --no-changes     Makes no changes and outputs potential results to the
+                       output.
+  -v, --verbose        Verbose mode, will print why a rule was invalid.
+  -vv, --very-verbose  Very-verbose mode, will printout what rule is about to
+                       be processed, the invalid rules, the reasons they are
+                       invalid and all contents of the rule.
+  -f, --fail           Fail mode, only prints messages about invalid rules.
+  -w, --warnings       This mode will ignore warnings and proceed with other
+                       behaviors if the rule is valid.
+  -s, --standard       This prints the yara standard to the screen.
+  -i, --in-place       Modifies valid files in place, mutually exclusive with
+                       -c.
+  -c, --create-files   Writes a new file for each valid file, mutually
+                       exclusive with -i.
+  ```
+
 # Centre canadien pour la cybersécurité
 
 ## Spécification YARA du CCCS
@@ -116,19 +166,18 @@ yara_validator_cli.py:	Utilitaire de validation pour la ligne de commande. Il ac
 
 Note:  la librairie et l'utilitaire de ligne de commande n'accepte que les fichiers qui contient une seule règle par fichier.
 
+## Exigences
 
-## Requirements
+Python 3.6+
 
-Python 3.6
+Tous les libraries python sont dans le fichier requirements.txt
 
-All required python packages are in the requirements.txt
-
-The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository:
+[Cyber Threat Intelligence Repository](https://github.com/mitre/cti) est un sous module de ce répertoire:
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
  ```
  
-## yara_validator_cli.py usage
+## yara_validator_cli.py en ligne de commandes
 
 ```
 yara_validator_cli.py -h 
@@ -166,3 +215,4 @@ optional arguments:
   -c, --create-files   Writes a new file for each valid file, mutually
                        exclusive with -i.
   ```
+
