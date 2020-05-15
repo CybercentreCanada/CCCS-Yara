@@ -28,6 +28,49 @@ class MetadataOpt(Enum):
     OPT_OPTIONAL = 'opt_optional'
 
 
+# potential values for the encoding check
+class StringEncoding(Enum):
+    ASCII = 'ascii'
+    UTF8 = 'utf-8'
+    NONE = 'none'
+
+
+def __is_ascii(rule_string):
+    """
+    Takes the string of the rule and parses it to check if there are only ascii characters present.
+    :param rule_string: the string representation of the yara rule
+    :return: true if there are only ascii characters in the string
+    """
+    return len(rule_string) == len(rule_string.encode())
+
+
+def __is_utf8(rule_string):
+    """
+    Takes the string of the rule and parses it to check if there are only utf-8 characters present.
+    :param rule_string: the string representation of the yara rule
+    :return: true if there are only utf-8 characters in the string
+    """
+    try:
+        rule_string.encode('utf-8')
+    except UnicodeEncodeError:
+        return False
+    else:
+        return True
+
+
+def check_encoding(rule_string, encoding_flag):
+    if encoding_flag == StringEncoding.ASCII:
+        if not __is_ascii(rule_string):
+            encoding_response = 'There are Non-ASCII Characters Present in the Rule.'
+            return False, encoding_response
+    elif encoding_flag == StringEncoding.UTF8:
+        if not __is_utf8(rule_string):
+            encoding_response = 'There are Non-UTF-8 Characters Present in the Rule.'
+            return False, encoding_response
+
+    return True, ''
+
+
 class Validators:
     def __init__(self):
         self.required_fields = None

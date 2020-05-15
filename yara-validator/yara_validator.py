@@ -8,7 +8,7 @@ from plyara.utils import rebuild_yara_rule
 # for querying the MITRE ATT&CK data
 from stix2 import FileSystemSource
 
-from validator_functions import Validators, MetadataOpt
+from validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
 
 # set current working directory
 SCRIPT_LOCATION = Path(__file__).resolve().parent
@@ -28,7 +28,7 @@ ACTOR = 'actor'
 AUTHOR = 'author'
 
 
-def run_yara_validator(yara_file, one_rule_files=False):
+def run_yara_validator(yara_file, one_rule_files=False, string_encoding=StringEncoding.ASCII):
     """
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string representation
@@ -38,22 +38,59 @@ def run_yara_validator(yara_file, one_rule_files=False):
               and will only process the first rule found.
     :param one_rule_files:
     :param yara_file:
+    :param string_encoding:
     :return:
     """
 
     parser = plyara.Plyara()
     if isinstance(yara_file, str) or isinstance(yara_file, Path):
         with open(yara_file, encoding='utf-8') as yf:
-            yara_rule_file_string = yf.read()
+            try:
+                yara_rule_file_string = yf.read()
+            except UnicodeDecodeError as e:
+                print('UnicodeDecodeError: ' + str(e))
+                rule_list = []
+                valid = YaraValidatorReturn('')
+                rule_response = 'UnicodeDecodeError:\t{!r}'.format(str(e))
+                valid.update_validity(False, yara_file, rule_response)
+                rule_list.append(valid)
+                return rule_list
+            except Exception as e:
+                print('There was an error opening the file: ' + str(e))
+                valid = YaraValidatorReturn('')
+                rule_response = 'There was an error opening the file:\t{!r}'.format(str(e))
+                valid.update_validity(False, yara_file, rule_response)
+                return valid
     else:
         yara_rule_file_string = yara_file
 
-    parsed_rules = parser.parse_string(yara_rule_file_string)
+    if not check_encoding(yara_rule_file_string, string_encoding):
+        print('Encoding mismatch for file')
+        valid = YaraValidatorReturn(yara_rule_file_string)
+        rule_response = 'Encoding mismatch for file:\t{!r}'.format(str(string_encoding))
+        valid.update_validity(False, yara_file, rule_response)
+        return valid
+
+    try:
+        parsed_rules = parser.parse_string(yara_rule_file_string)
+    except plyara.exceptions.ParseTypeError as e:
+        print('Error reported by plyara library: plyara.exceptions.ParseTypeError: ' + str(e))
+        valid = YaraValidatorReturn(yara_rule_file_string)
+        rule_response = 'Error reported by plyara library: plyara.exceptions.ParseTypeError:\t{!r}'.format(str(e))
+        valid.update_validity(False, yara_file, rule_response)
+        return valid
+    except Exception as e:
+        print('Error Parsing YARA file with plyara: ' + str(e))
+        valid = YaraValidatorReturn(yara_rule_file_string)
+        rule_response = 'Error Parsing YARA file with plyara:\t{!r}'.format(str(e))
+        valid.update_validity(False, yara_file, rule_response)
+        return valid
+
     rule_list = []
 
     for index, rule in enumerate(parsed_rules):
         validator = YaraValidator(MITRE_STIX_DATA_PATH, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH)
-        validated_rule = validator.validation(rule, rebuild_yara_rule(rule))
+        validated_rule = validator.validation(rule, rebuild_yara_rule(rule), StringEncoding.UTF8)
         if one_rule_files:
             return validated_rule
         rule_list.append(validated_rule)
@@ -371,11 +408,13 @@ class YaraValidator:
             return False, rule_response
         return True, ''
 
-    def validation(self, rule_to_validate, rule_to_validate_string):
+    def validation(self, rule_to_validate, rule_to_validate_string, string_encoding, generate_values=True):
         """
         Called to validate a YARA rule. This is the primary function.
         :param rule_to_validate: the plyara parsed rule that is being validated
         :param rule_to_validate_string: the string representation of the YARA rule to verify, this is passed to the YaraValidatorReturn object for use later
+        :param string_encoding: if there is a desired string encoding to check and which it is
+        :param generate_values: if values need to be generated or not
         :return: the valid object of the YaraValidatorReturn class
         """
         valid = YaraValidatorReturn(rule_to_validate_string)
@@ -434,14 +473,15 @@ class YaraValidator:
             if list(rule_to_validate[METADATA][empty_metadata].values())[0] == '':
                 metadata_vals.pop(empty_metadata)
 
-        self.generate_required_optional_metadata(rule_to_validate)
+        if generate_values:
+            self.generate_required_optional_metadata(rule_to_validate)
 
         for key, value in self.required_fields.items():
             if not value.found and not str(key).upper() in self.category_types:
                 if value.optional == MetadataOpt.REQ_PROVIDED:
                     valid.update_validity(False, key, 'Missing required metadata')
-                # else:
-                #     valid.update_warning(True, key, 'Optional Field Not Provided')
+                elif value.optional == MetadataOpt.REQ_OPTIONAL:
+                    valid.update_warning(False, key, 'Missing metadata that could have been generated')
             else:
                 if self.required_fields_index[value.position].count > value.max_count and value.max_count != -1:
                     valid.update_validity(False, key, 'Too many instances of metadata value.')

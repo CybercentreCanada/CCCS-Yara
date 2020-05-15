@@ -183,7 +183,7 @@ def __call_validator(options):
                 y_file=yara_rule_path,
             ))
 
-        rule_return_list = run_yara_validator(yara_rule_path, one_rule_files=False)
+        rule_return_list = run_yara_validator(yara_rule_path, one_rule_files=True)
         what_will_be_done = 'make no changes'
         yara_file_output = None
 
