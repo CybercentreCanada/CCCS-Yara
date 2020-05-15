@@ -94,6 +94,16 @@ version:
    unique: Yes
    optional: Optional
    validator: valid_version
+   
+yara_version:
+   description: 'Minimum version of Yara to run the rule'
+   format: 'unvalidated'
+   unique: Yes
+   optional: Yes
+   validator: valid_regex
+   argument:
+      fileName: CCCS_Yara_values.yml
+      valueName: yara_version_regex
 
 creation_date:
    description: 'Date stamp of when the rule was created'

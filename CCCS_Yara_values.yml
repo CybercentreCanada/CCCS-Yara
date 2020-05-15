@@ -148,6 +148,10 @@ hash_types:
       value: "(?i)[a-f0-9]{40}"
    -
       value: "(?i)[a-f0-9]{64}"
+      
+yara_version_regex:
+   -
+      value: "\\d{0,2}\\.\\d{0,2}\\.\\d{0,2}"
 
 unvalidated_regex:
    -
