@@ -1,1 +1,1 @@
-This is the Yara Validator Library
+This is the YARA Validator Library

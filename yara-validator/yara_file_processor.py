@@ -6,25 +6,64 @@ from pathlib import Path
 
 class YaraFileProcessor:
     """
-    YaraFileProcessor class is used to process a given rule file and parse it into one or more
+    YaraFileProcessor class is used to process a given rule file and parse it into one or more YARA rules
     """
 
     def __init__(self, rule_file):
-        parser = plyara.Plyara()
         # Original rule file
         self.original_rule_file = rule_file
-        yara_rule_file = open(rule_file, encoding='utf-8')
-        # String representation of original rule file
-        self.original_rule_string = yara_rule_file.read()
-        yara_rule_file.close()
         # String representation to contain edits to the original rule
-        self.edited_rule_string = ""
-        # Plyara parsed ruler_file
-        self.plyara_rule = parser.parse_string(self.original_rule_string)
+        self.edited_rule_string = ''
+        # Array to contain the YARA rules
+        self.yara_rules = []
+        # Overall rule error flag
+        self.file_errors = False
+        # Overall warning flag
+        self.file_warnings = False
+        # collection of all the file errors
+        self.errors = collections.OrderedDict()
+        # collection of all the file warnings (not used yet)
+        self.warnings = collections.OrderedDict()
+
+        # Plyara object for parsing the yara rule file
+        parser = plyara.Plyara()
+        # This block attempts to read the file as utf-8. If there are any issues with the file format or reading
+        #   the file it creates a yara_rule object and sets the error state
+        if isinstance(rule_file, str) or isinstance(rule_file, Path):
+            with open(rule_file, encoding='utf-8') as yf:
+                try:
+                    self.original_rule_string = yf.read()
+                except UnicodeDecodeError as e:
+                    print('UnicodeDecodeError: ' + str(e))
+                    file_response = 'UnicodeDecodeError:\t{!r}'.format(str(e))
+                    self.update_file_error(True, str(self.original_rule_file.name), file_response)
+                    return
+                except Exception as e:
+                    print('There was an error opening the file: ' + str(e))
+                    file_response = 'There was an error opening the file:\t{!r}'.format(str(e))
+                    self.update_file_error(True, str(self.original_rule_file.name), file_response)
+                    return
+        else:
+            self.original_rule_string = rule_file
+
+        # This block attempts to parse the self.original_rule_string. If there are any issues parsing the file it a
+        #   yara_rule object and sets the error state
+        try:
+            self.plyara_rule = parser.parse_string(self.original_rule_string)
+        except plyara.exceptions.ParseTypeError as e:
+            print('Error reported by plyara library: plyara.exceptions.ParseTypeError: ' + str(e))
+            file_response = 'Error reported by plyara library: plyara.exceptions.ParseTypeError:\t{!r}'.format(str(e))
+            self.update_file_error(True, str(self.original_rule_file.name), file_response)
+            return
+        except Exception as e:
+            print('Error Parsing YARA file with plyara: ' + str(e))
+            file_response = 'Error Parsing YARA file with plyara:\t{!r}'.format(str(e))
+            self.update_file_error(True, str(self.original_rule_file.name), file_response)
+            return
+
         # The number of rules found in the file
         self.count_of_rules = len(self.plyara_rule)
         # Process the string and PlYara into an array of YaraRule objects
-        self.yara_rules = []
         self.__process_rule_representiations_to_array()
 
     def __process_rule_representiations_to_array(self):
@@ -42,7 +81,7 @@ class YaraFileProcessor:
                 yara_rule = YaraRule(string_of_rule, plyara_rule)
                 self.yara_rules.append(yara_rule)
 
-    def string_of_rule_to_original_file(self):
+    def strings_of_rules_to_original_file(self):
         """
         This rebuilds a rule string incorporating any changes from the rule return objects
         :return:
@@ -59,10 +98,10 @@ class YaraFileProcessor:
                 edited_rule_string = edited_rule_string[0:rule.rule_plyara['start_line'] - 1]\
                                      + changed_rule_string + edited_rule_string[rule.rule_plyara['stop_line']:]
 
-        edited_rule_string = "\n".join(edited_rule_string)
+        edited_rule_string = '\n'.join(edited_rule_string)
         self.edited_rule_string = edited_rule_string
 
-    def string_of_rule_to_multi_file(self):
+    def strings_of_rules_to_multi_files(self):
         """
         This will potentially rebuild a multi-rule yara file into an array of strings. Each string will represent a
             single yara rule which will incorporate any changes from the rule return objects.
@@ -71,15 +110,49 @@ class YaraFileProcessor:
         :return:
         """
 
-    def return_edited_rule_string(self):
+    def update_file_error(self, file_error, error_tag, message):
+        if not self.file_errors:
+            self.file_errors = file_error
+
+        self.errors[error_tag] = message
+
+    def update_file_warning(self, file_warning, warning_tag, message):
+        if not self.file_warnings:
+            self.file_warnings = file_warning
+
+        self.warnings[warning_tag] = message
+
+    def return_edited_file_string(self):
         return self.edited_rule_string
 
-    def return_rule_error_state(self):
+    def __build_return_string(self, collection):
+        return_string = ''
+        for index, metadata in enumerate(collection):
+            if index > 0:
+                return_string += '\n'
+            return_string = '{}{}: {}'.format(return_string, metadata, collection[metadata])
+
+        return return_string
+
+    def __build_return_string_cmlt(self, collection):
+        format_string = '{indent:>8} {key:30} {value}'
+        return_string = '\n'.join([
+            format_string.format(indent='-', key=k + ':', value=v)
+            for k, v in collection.items()
+        ])
+
+        return return_string
+
+    def return_file_error_state(self):
         """
         Loops through the self.yara_rules array and returns true if any of the rules are in an error state
         :return:
         """
         error_state = False
+        if self.file_errors:
+            error_state = self.file_errors
+            return error_state
+
         for rule in self.yara_rules:
             if rule.rule_return:
                 if isinstance(rule.rule_return, YaraReturn):
@@ -95,10 +168,13 @@ class YaraFileProcessor:
 
     def return_rule_errors(self):
         """
-        Loops throught the self.yara_rules array and returns a string for of errors
-        :return:
+        Returns the any file errors and loops through the self.yara_rules array and returns a string for any errors
+        :return: error_string, a string of all of the errors concatenated together
         """
-        error_string = ""
+        error_string = ''
+
+        if self.file_errors:
+            error_string = self.__build_return_string(self.errors)
 
         for rule in self.yara_rules:
             if rule.rule_return:
@@ -116,20 +192,23 @@ class YaraFileProcessor:
         Loops throught the self.yara_rules array and returns a string for of errors in cmlt format
         :return:
         """
-        error_string = ""
+        error_string = ''
+
+        if self.file_errors:
+            error_string = self.__build_return_string_cmlt(self.errors)
 
         for rule in self.yara_rules:
             if rule.rule_return:
                 if isinstance(rule.rule_return, YaraReturn):
                     if rule.return_error():
-                        error_string = error_string + "{indent:>8}{name:10}".format(indent="- ",
-                                                                                    name=rule.get_rule_name() + ":\n")
+                        error_string = error_string + "{indent:>8} {name:10}".format(indent="- ",
+                                                                                     name=rule.get_rule_name() + ":\n")
                         error_string = error_string + rule.rule_plyara["rule_name"] + "\n"
                         error_string = error_string + rule.return_errors_for_cmlt()
                 else:
                     if not rule.rule_return.rule_validity:
-                        error_string = error_string + "{indent:>8}{name:10}".format(indent="- ",
-                                                                                    name=rule.get_rule_name() + ":\n")
+                        error_string = error_string + "{indent:>8} {name:10}".format(indent="- ",
+                                                                                     name=rule.get_rule_name() + ":\n")
                         error_string = error_string + rule.return_errors_for_cmlt()
 
         return error_string
@@ -153,7 +232,7 @@ class YaraFileProcessor:
         Loops throught the self.yara_rules array and returns a string for of warnings
         :return:
         """
-        warning_string = ""
+        warning_string = ''
 
         for rule in self.yara_rules:
             if rule.rule_return:
@@ -167,13 +246,13 @@ class YaraFileProcessor:
         Loops throught the self.yara_rules array and returns a string for of warnings in cmlt format
         :return:
         """
-        warning_string = ""
+        warning_string = ''
 
         for rule in self.yara_rules:
             if rule.rule_return:
                 if rule.return_warning():
-                    warning_string = warning_string + "{indent:>8}{name:10}".format(indent="- ",
-                                                                                    name=rule.get_rule_name() + ":\n")
+                    warning_string = warning_string + "{indent:>8} {name:10}".format(indent="- ",
+                                                                                     name=rule.get_rule_name() + ":\n")
                     warning_string = warning_string + rule.return_warnings_for_cmlt()
 
         return warning_string
@@ -202,6 +281,7 @@ class YaraRule:
     def __init__(self, rule_string, rule_plyara):
         self.rule_string = rule_string
         self.rule_plyara = rule_plyara
+        self.rule_name = str(self.rule_plyara.get('rule_name'))
         self.rule_return = YaraReturn(rule_string)
 
     def add_rule_return(self, rule_return):
@@ -211,34 +291,34 @@ class YaraRule:
         return self.rule_return.error_state()
 
     def return_errors(self):
-        error_string = ""
+        error_string = ''
 
         if isinstance(self.rule_return, YaraReturn):
             if self.rule_return.error_state():
                 error_string = self.rule_return.return_errors()
                 if error_string:
-                    error_string = error_string + "\n"
+                    error_string = error_string + '\n'
         else:
             if not self.rule_return.rule_validity:
                 error_string = self.rule_return.return_errors()
                 if error_string:
-                    error_string = error_string + "\n"
+                    error_string = error_string + '\n'
 
         return error_string
 
     def return_errors_for_cmlt(self):
-        error_string = ""
+        error_string = ''
 
         if isinstance(self.rule_return, YaraReturn):
             if self.rule_return.error_state():
                 error_string = self.rule_return.return_errors_for_cmlt()
                 if error_string:
-                    error_string = error_string + "\n"
+                    error_string = error_string + '\n'
         else:
             if not self.rule_return.rule_validity:
                 error_string = self.rule_return.return_errors_for_cmlt()
                 if error_string:
-                    error_string = error_string + "\n"
+                    error_string = error_string + '\n'
 
         return error_string
 
@@ -246,20 +326,20 @@ class YaraRule:
         return self.rule_return.warning_state()
 
     def return_warnings(self):
-        warning_string = ""
+        warning_string = ''
         if self.rule_return.warning_state():
             warning_string = self.rule_return.return_warnings()
             if warning_string:
-                warning_string = warning_string + "\n"
+                warning_string = warning_string + '\n'
 
         return warning_string
 
     def return_warnings_for_cmlt(self):
-        warning_string = ""
+        warning_string = ''
         if self.rule_return.warning_state():
             warning_string = self.rule_return.return_warnings_for_cmlt()
             if warning_string:
-                warning_string = warning_string + "\n"
+                warning_string = warning_string + '\n'
 
         return warning_string
 
@@ -267,7 +347,7 @@ class YaraRule:
         return self.rule_return
 
     def get_rule_name(self):
-        return str(self.rule_plyara.get("rule_name"))
+        return self.rule_name
 
     def return_original_rule(self):
         return self.rule_return.return_original_rule()
@@ -287,7 +367,7 @@ class YaraReturn:
         self.rule_errors = False
         # Overall warning flag
         self.rule_warnings = False
-        # each possible metadata tag
+        # collection of all the errors
         self.errors = collections.OrderedDict()
         # collection of all the warnings
         self.warnings = collections.OrderedDict()
@@ -295,6 +375,21 @@ class YaraReturn:
         self.original_rule = original_rule
         # set
         self.edited_rule = None
+
+#    def __init__(self, original_rule):
+#        self.rule_name = None
+#        # Overall rule validity flag
+#        self.rule_validity = True
+#        # each possible metadata value
+#        self.metadata_vals = collections.OrderedDict()
+#        # Overall warning flag
+#        self.rule_warnings = False
+#        # collection of all the warnings
+#        self.warnings = collections.OrderedDict()
+#        # the original_rule
+#        self.rule_to_validate = original_rule
+#        # set
+#        self.validated_rule = None
 
     def update_error(self, rule_error, error_tag, message):
         if not self.rule_errors:
@@ -309,21 +404,20 @@ class YaraReturn:
         self.warnings[warning_tag] = message
 
     def __build_return_string(self, collection):
-        return_string = ""
-        for index, tag in enumerate(collection):
+        return_string = ''
+        for index, metadata in enumerate(collection):
             if index > 0:
-                return_string = return_string + "\n"
-            return_string = return_string + tag + ": " + collection[tag]
+                return_string += '\n'
+            return_string = '{}{}: {}'.format(return_string, metadata, collection[metadata])
 
         return return_string
 
     def __build_return_string_cmlt(self, collection):
-        return_string = ""
-        for index, tag in enumerate(collection):
-            if index > 0:
-                return_string = return_string + "\n"
-            return_string = return_string + "{indent:>9}{tag:30} {collection}".format(indent="- ", tag=tag + ":",
-                                                                                      collection=collection[tag])
+        format_string = '{indent:>9} {key:30} {value}'
+        return_string = '\n'.join([
+            format_string.format(indent='-', key=k + ':', value=v)
+            for k, v in collection.items()
+        ])
 
         return return_string
 
@@ -331,14 +425,14 @@ class YaraReturn:
         return self.rule_errors
 
     def return_errors(self):
-        error_string = ""
+        error_string = ''
         if self.rule_errors:
             error_string = self.__build_return_string(self.errors)
 
         return error_string
 
     def return_errors_for_cmlt(self):
-        error_string = ""
+        error_string = ''
         if self.rule_errors:
             error_string = self.__build_return_string_cmlt(self.errors)
 
@@ -348,14 +442,14 @@ class YaraReturn:
         return self.rule_warnings
 
     def return_warnings(self):
-        warning_string = ""
+        warning_string = ''
         if self.rule_warnings:
             warning_string = self.__build_return_string(self.warnings)
 
         return warning_string
 
     def return_warnings_for_cmlt(self):
-        warning_string = ""
+        warning_string = ''
         if self.rule_warnings:
             warning_string = self.__build_return_string_cmlt(self.warnings)
 
@@ -370,29 +464,43 @@ class YaraReturn:
     def set_edited_rule(self, edited_rule):
         self.edited_rule = edited_rule
 
+    def return_validated_rule(self):
+        """
+        Created to duplicate functionality from original YaraValidatorReturn class
+        :return: returns the self.edited_rule instead of the original self.validated_rule
+        """
+        return self.edited_rule
+
+    def set_validated_rule(self, valid_rule):
+        """
+        Created to duplicate functionality from original YaraValidatorReturn class
+        :param valid_rule:
+        :return:
+        """
+        self.edited_rule = valid_rule
+
     def __find_meta_start_end(self, rule_to_process):
         """
-        A string representation of a yara rule is passed into this function, it performs the splitlines() function,
-            searches for the start and the end indexes of the meta section of the first yara rule.
+        A string representation of a YARA rule is passed into this function, it performs the splitlines() function,
+            searches for the start and the end indexes of the meta section of the first YARA rule.
         :param rule_to_process: The Rule to be processed
-        :return: a tuple of the array of lines for the rule processed, the start of meta index and the end of meta index
+        :return: a tuple of the array of lines for the rule processed, and a list of start and end of meta indices
         """
         rule_to_process_lines = rule_to_process.splitlines()
-        rule_start = 0
-        rule_end = 0
-        meta_regex = "^\s*meta\s*:\s*$"
-        next_section = "^\s*strings\s*:\s*$"
+        meta_offsets = []
+        meta_start = 0
+        meta_end = 0
+        meta_regex = r'^\s*meta\s*:\s*$'
+        next_section = r'^\s*(?:strings|condition)\s*:\s*$'
 
         for index, line in enumerate(rule_to_process_lines):
-            if rule_start > 0:
-                if re.match(next_section, line):
-                    rule_end = index
-                    break
-            else:
-                if re.match(meta_regex, line):
-                    rule_start = index
+            if re.match(meta_regex, line):
+                meta_start = index
+            elif re.match(next_section, line) and meta_start > 0:
+                meta_end = index
+                break
 
-        return rule_to_process_lines, rule_start, rule_end
+        return rule_to_process_lines, meta_start, meta_end
 
     def rebuild_rule(self):
         """
@@ -411,8 +519,12 @@ class YaraReturn:
         yara_original_lines, yara_original_meta_start, yara_original_meta_end = self.__find_meta_start_end(self.original_rule)
         yara_edited_lines, yara_edited_meta_start, yara_edited_meta_end = self.__find_meta_start_end(self.edited_rule)
 
+        yara_new_file = []
         if yara_original_meta_start != 0 and yara_original_meta_end != 0 and yara_edited_meta_start != 0 and yara_edited_meta_end != 0:
-            yara_new_file = yara_original_lines[0:yara_original_meta_start] + yara_edited_lines[yara_edited_meta_start:yara_edited_meta_end] + yara_original_lines[yara_original_meta_end:]
-            yara_new_file = "\n".join(yara_new_file)
-            if self.original_rule != yara_new_file:
-                self.edited_rule = yara_new_file
+            yara_new_file = yara_original_lines[0:yara_original_meta_start] + \
+                            yara_edited_lines[yara_edited_meta_start:yara_edited_meta_end] + \
+                            yara_original_lines[yara_original_meta_end:]
+            yara_new_file = '\n'.join(yara_new_file)
+
+        if self.original_rule != yara_new_file:
+            self.edited_rule = yara_new_file
