@@ -351,7 +351,7 @@ class YaraValidator:
 
         # takes all unrecognized or multivalue metadata and appends them to the end of the array of metadata
         for key_value_pair in list(metadata_key_value_pairs):
-            correct_order[tracking_added] = key_value_pair.pop(0)
+            correct_order[tracking_added] = metadata_key_value_pairs.pop(0)
             tracking_added = tracking_added + 1
 
         rule_to_sort[METADATA] = correct_order
