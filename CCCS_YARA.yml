@@ -163,7 +163,7 @@ author:
    optional: No
    validator: valid_regex
    argument:
-      regexExpression: ^[a-zA-Z]+\@[A-Z]+$|^[A-Z\s._-]+$
+      regexExpression: ^[a-zA-Z]+\@[A-Z]+$|^[A-Z\s._-]+$|^.*$
 
 description:
    description: 'The description of the rule'

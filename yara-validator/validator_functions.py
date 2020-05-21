@@ -463,9 +463,9 @@ class Validators:
         metadata = rule_to_validate_type[METADATA]
         rule_category_key_to_check = list(metadata[metadata_index].keys())[0]
         rule_category_value_to_check = list(metadata[metadata_index].values())[0]
-        if re.fullmatch(CATEGORY_TYPE_REGEX, rule_category_value_to_check):
+        if re.fullmatch(UNIVERSAL_REGEX, rule_category_value_to_check):
             self.required_fields[child_metadata_place_holder].attributevalid()
-        elif re.fullmatch(CATEGORY_TYPE_REGEX, str(rule_category_value_to_check).upper()):
+        elif re.fullmatch(UNIVERSAL_REGEX, str(rule_category_value_to_check).upper()):
             rule_category_value_to_check = str(rule_category_value_to_check).upper()
             metadata[metadata_index][rule_category_key_to_check] = rule_category_value_to_check
             self.required_fields[child_metadata_place_holder].attributevalid()
