@@ -13,6 +13,7 @@ from yara_file_processor import YaraFileProcessor, YaraRule
 
 # set current working directory
 SCRIPT_LOCATION = Path(__file__).resolve().parent
+VALIDATOR_CFG = SCRIPT_LOCATION / 'validator_cfg.yml'
 MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
 CONFIG_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_YARA.yml'
 CONFIG_VALUES_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_YARA_values.yml'
@@ -27,26 +28,50 @@ REPORT = 'report'
 HASH = 'hash'
 ACTOR = 'actor'
 AUTHOR = 'author'
+VALUE = 'value'
+STRING_ENCODING = 'string_encoding'
 
 
-def run_yara_validator(yara_file, generate_values=True, string_encoding=StringEncoding.ASCII):
+def check_validator_cfg(validator_cfg):
+    """
+    Validates the loaded configuration file to ensure all values are valid
+    :param  validator_cfg: the location of the configuration file
+    :return:
+    """
+    string_encoding = validator_cfg.get(STRING_ENCODING).get(VALUE)
+    if string_encoding is not None:
+        potential_values = set(item.value for item in StringEncoding)
+        if string_encoding not in potential_values:
+            print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG, STRING_ENCODING, string_encoding))
+            exit(1)
+    else:
+        print('{!r}: {!r} has a missing parameter - string_encoding'.format(VALIDATOR_CFG, STRING_ENCODING))
+        exit(1)
+
+
+def run_yara_validator(yara_file, generate_values=True):
     """
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string representation
         of the yara file to YaraValidator.valadation
     :param yara_file: The file variable passed in. Usually a string or Path variable
-    :param string_encoding: which string_encoding check to use (None, ASCII or UTF-8) ASCII is the default
     :param generate_values: determine if the values the validator can generate should be generated or not, default True
     :return:
     """
+    with open(VALIDATOR_CFG, 'r', encoding='utf8') as config_file:
+        validator_configuration = yaml.safe_load(config_file)
+
+    check_validator_cfg(validator_configuration)
     yara_file_processor = YaraFileProcessor(yara_file)
 
     # If there are any issues with the yara file read process exit out and return the error
     if yara_file_processor.return_file_error_state():
         return yara_file_processor
 
-    if not check_encoding(yara_file_processor.return_original_rule(), string_encoding):
-        file_response = 'Some characters present in file are not:\t{!r}'.format(str(string_encoding))
+    if not check_encoding(yara_file_processor.return_original_rule(),
+                          validator_configuration.get(STRING_ENCODING).get(VALUE)):
+        file_response = 'Some characters present in file are not:\t{!r}'\
+            .format(str(validator_configuration.get(STRING_ENCODING).get(VALUE)))
         yara_file_processor.update_file_error(True, str(yara_file_processor.original_rule_file.name), file_response)
         return yara_file_processor
 

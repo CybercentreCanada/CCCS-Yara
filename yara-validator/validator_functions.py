@@ -17,7 +17,7 @@ METADATA = 'metadata'
 BASE62_REGEX = r'^[0-9a-zA-z]+$'
 UNIVERSAL_REGEX = r'^[^a-z]*$'
 OPENSOURCE_REGEX = r'^OPENSOURCE$'
-CATEGORY_TYPE_REGEX = r'^[A-Z\-. 0-9_+\/]*$'
+CATEGORY_TYPE_REGEX = r'^[A-Z\-. 0-9_+\/]*$'    #possibly redudant and can be removed, investigate
 MITRE_GROUP_NAME = 'name'
 
 
@@ -59,10 +59,10 @@ def __is_utf8(rule_string):
 
 
 def check_encoding(rule_string, encoding_flag):
-    if encoding_flag == StringEncoding.ASCII:
+    if encoding_flag == StringEncoding.ASCII.value:
         if not __is_ascii(rule_string):
             return False
-    elif encoding_flag == StringEncoding.UTF8:
+    elif encoding_flag == StringEncoding.UTF8.value:
         if not __is_utf8(rule_string):
             return False
 
@@ -489,7 +489,7 @@ class Validators:
         ACTOR_TYPE = self.required_fields[ACTOR].argument.get('required')
         child_metadata = self.required_fields[ACTOR].argument.get('child')
         child_metadata_place_holder = self.required_fields[ACTOR].argument.get('child_place_holder')
-        mitre_group_alias_regex = r'^[A-Z 0-9\s._-]+$'
+        mitre_group_alias_regex = r'^[^a-z]+$'
 
         self.required_fields[ACTOR].attributefound()
         self.required_fields_index[self.required_fields[ACTOR].position].increment_count()
