@@ -16,8 +16,6 @@ from stix2_patch.filter_casefold import FilterCasefold
 METADATA = 'metadata'
 BASE62_REGEX = r'^[0-9a-zA-z]+$'
 UNIVERSAL_REGEX = r'^[^a-z]*$'
-OPENSOURCE_REGEX = r'^OPENSOURCE$'
-CATEGORY_TYPE_REGEX = r'^[A-Z\-. 0-9_+\/]*$'    #possibly redudant and can be removed, investigate
 MITRE_GROUP_NAME = 'name'
 
 
