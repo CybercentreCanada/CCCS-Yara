@@ -145,13 +145,14 @@ sharing:
       valueName: sharing_classifications
 
 source:
-   description: 'Source organization of the YARA rule'
+   description: 'Source organization of the YARA rule, if source is set to OPENSOURCE reference will be set to required'
    format: 'uppercase'
    unique: Yes
    optional: No
    validator: valid_source
    argument:
       required: reference
+      ifvalue: ^OPENSOURCE$
 
 reference:
    description: 'Reference for the rule i.e. weblink, report, individual, etc.'

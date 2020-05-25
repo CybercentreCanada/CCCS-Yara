@@ -329,6 +329,7 @@ class Validators:
         """
         SOURCE = metadata_key
         REFERENCE = self.required_fields[SOURCE].argument.get('required')
+        IFVALUE_REGEX = r'' + self.required_fields[SOURCE].argument.get('ifvalue')
         self.required_fields[SOURCE].attributefound()
         self.required_fields_index[self.required_fields[SOURCE].position].increment_count()
 
@@ -343,7 +344,7 @@ class Validators:
         else:
             self.required_fields[SOURCE].attributeinvalid()
 
-        if re.fullmatch(OPENSOURCE_REGEX, source_to_check):
+        if re.fullmatch(IFVALUE_REGEX, source_to_check):
             # Because the source is OPENSOURCE a reference is required
             self.required_fields[REFERENCE].optional = MetadataOpt.REQ_PROVIDED
 
