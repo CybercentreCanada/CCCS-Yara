@@ -1,0 +1,20 @@
+
+#  yara_validator Standard Configuration
+#
+# --FORMAT--
+#  <Setting Name>:
+#    description: <description of the setting>
+#    value: <value of the setting>
+#
+# --NOTE--
+# 1. Currently only one setting to set the default behavior
+#
+
+---
+string_encoding:
+   description: 'Sets the default behavior for the encoding check of the string representation of the file in the
+                 validator. Currently supported values:
+                    ascii:  Will check if the file contains only ASCII characters
+                    utf-8:  Will check if the file contains only UTF-8 characters
+                    none:   Will perform no check'
+   value: utf-8
