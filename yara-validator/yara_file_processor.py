@@ -376,21 +376,6 @@ class YaraReturn:
         # set
         self.edited_rule = None
 
-#    def __init__(self, original_rule):
-#        self.rule_name = None
-#        # Overall rule validity flag
-#        self.rule_validity = True
-#        # each possible metadata value
-#        self.metadata_vals = collections.OrderedDict()
-#        # Overall warning flag
-#        self.rule_warnings = False
-#        # collection of all the warnings
-#        self.warnings = collections.OrderedDict()
-#        # the original_rule
-#        self.rule_to_validate = original_rule
-#        # set
-#        self.validated_rule = None
-
     def update_error(self, rule_error, error_tag, message):
         if not self.rule_errors:
            self.rule_errors = rule_error
