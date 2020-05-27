@@ -154,16 +154,6 @@ source:
       required: reference
       ifvalue: ^OPENSOURCE$
 
-reference:
-   description: 'Reference for the rule i.e. weblink, report, individual, etc.'
-   format: 'unvalidated'
-   unique: No
-   optional: Yes
-   validator: valid_regex
-   argument:
-      fileName: CCCS_YARA_values.yml
-      valueName: unvalidated_regex
-
 author:
    description: 'Author and organization'
    format: 'lowercase_author@uppercase_organization or uppercase_organization'
@@ -255,6 +245,16 @@ report:
    argument:
       fileName: CCCS_YARA_values.yml
       valueName: universal_regex
+
+reference:
+   description: 'Reference for the rule i.e. weblink, report, individual, etc.'
+   format: 'unvalidated'
+   unique: No
+   optional: Yes
+   validator: valid_regex
+   argument:
+      fileName: CCCS_YARA_values.yml
+      valueName: unvalidated_regex
 
 hash:
    description: 'Sample hash'
