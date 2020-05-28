@@ -81,6 +81,14 @@ class YaraFileProcessor:
                 yara_rule = YaraRule(string_of_rule, plyara_rule)
                 self.yara_rules.append(yara_rule)
 
+    def __standardize_white_space(self, edited_rule_string):
+        """
+        Takes the edited_rule_string, scans the start of each line for the self.char_to_replace and replaces each with
+
+        :param edited_rule_string:
+        :return:
+        """
+
     def strings_of_rules_to_original_file(self):
         """
         This rebuilds a rule string incorporating any changes from the rule return objects
@@ -98,6 +106,7 @@ class YaraFileProcessor:
                 edited_rule_string = edited_rule_string[0:rule.rule_plyara['start_line'] - 1]\
                                      + changed_rule_string + edited_rule_string[rule.rule_plyara['stop_line']:]
 
+        self.__standardize_white_space(edited_rule_string)
         edited_rule_string = '\n'.join(edited_rule_string)
         self.edited_rule_string = edited_rule_string
 
