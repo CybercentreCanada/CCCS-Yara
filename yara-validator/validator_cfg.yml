@@ -6,8 +6,6 @@
 #    description: <description of the setting>
 #    value: <value of the setting>
 #
-# --NOTE--
-# 1. Currently only one setting to set the default behavior
 #
 
 ---
@@ -18,3 +16,11 @@ string_encoding:
                     utf-8:  Will check if the file contains only UTF-8 characters
                     none:   Will perform no check'
    value: utf-8
+
+white_space_replacement:
+   description: 'Used to set the white space which will be searched for, what it will be replaced with and how many
+                 of those characters will be used'
+   value:
+      char_to_replace: '\t'
+      char_replacement: ' '
+      count_of_replaced: 4

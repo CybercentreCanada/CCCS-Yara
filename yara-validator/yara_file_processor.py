@@ -9,9 +9,13 @@ class YaraFileProcessor:
     YaraFileProcessor class is used to process a given rule file and parse it into one or more YARA rules
     """
 
-    def __init__(self, rule_file):
+    def __init__(self, rule_file, char_to_replace, char_replacement, count_of_replaced):
         # Original rule file
         self.original_rule_file = rule_file
+        # Variables for the white space standardization
+        self.char_to_replace = char_to_replace.encode('utf-8').decode('unicode_escape')
+        self.char_replacement = char_replacement.encode('utf-8').decode('unicode_escape')
+        self.count_of_replaced = count_of_replaced
         # String representation to contain edits to the original rule
         self.edited_rule_string = ''
         # Array to contain the YARA rules
@@ -81,13 +85,42 @@ class YaraFileProcessor:
                 yara_rule = YaraRule(string_of_rule, plyara_rule)
                 self.yara_rules.append(yara_rule)
 
-    def __standardize_white_space(self, edited_rule_string):
+    def __replace_for_each_one_to_many(self, line):
         """
-        Takes the edited_rule_string, scans the start of each line for the self.char_to_replace and replaces each with
-
-        :param edited_rule_string:
+        Takes a line, transforms it into a list, parses through the list looking for the self.char_to_replace character
+            and replaces each instance found with self.char_replacement * self.count_of_replaced
+        :param line: a line that starts with at least one self.char_to_replace_character
         :return:
         """
+        new_list = []
+        character_replace = [self.char_replacement] * self.count_of_replaced
+        line_as_list = list(line)
+        non_white_space_index = 0
+        for index, character in enumerate(line_as_list):
+            if re.match(self.char_to_replace, character):
+                new_list = new_list + character_replace
+            elif re.match(self.char_replacement, character):
+                new_list.append(character)
+            else:
+                non_white_space_index = index
+                break
+
+        new_list = new_list + line_as_list[non_white_space_index:]
+
+        newline = ''.join(new_list)
+        return newline
+
+    def __standardize_white_space(self, edited_rule_string):
+        """
+        Takes the edited_rule_string, scans the start of each line for the self.char_to_replace and passes any line
+            found to start with that character to __replace_for_each_one_to_many
+        :param edited_rule_string: the array of lines
+        :return:
+        """
+        regex_of_char_to_replace = '^' + '[' + self.char_to_replace + self.char_replacement + ']' + '+'
+        for index, line in enumerate(edited_rule_string):
+            if re.match(regex_of_char_to_replace, line):
+                edited_rule_string[index] = self.__replace_for_each_one_to_many(line)
 
     def strings_of_rules_to_original_file(self):
         """

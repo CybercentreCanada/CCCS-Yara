@@ -30,7 +30,10 @@ ACTOR = 'actor'
 AUTHOR = 'author'
 VALUE = 'value'
 STRING_ENCODING = 'string_encoding'
-
+WHITE_SPACE_REPLACEMENT = 'white_space_replacement'
+CHAR_TO_REPLACE = 'char_to_replace'
+CHAR_REPLACEMENT = 'char_replacement'
+COUNT_OF_REPLACED = 'count_of_replaced'
 
 def check_validator_cfg(validator_cfg):
     """
@@ -42,18 +45,53 @@ def check_validator_cfg(validator_cfg):
     if string_encoding is not None:
         potential_values = set(item.value for item in StringEncoding)
         if string_encoding not in potential_values:
-            print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG, STRING_ENCODING, string_encoding))
+            print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
+                                                                      STRING_ENCODING,
+                                                                      string_encoding))
             exit(1)
     else:
-        print('{!r}: {!r} has a missing parameter - string_encoding'.format(VALIDATOR_CFG, STRING_ENCODING))
+        print('{!r}: {!r} has a missing parameter - string_encoding'.format(VALIDATOR_CFG,
+                                                                            STRING_ENCODING))
+        exit(1)
+
+    white_space_replacement_values = validator_cfg.get(WHITE_SPACE_REPLACEMENT).get(VALUE)
+    if white_space_replacement_values is not None:
+        char_to_replace = white_space_replacement_values.get(CHAR_TO_REPLACE).encode('utf-8').decode('unicode_escape')
+        if char_to_replace is None or not re.fullmatch('\s', char_to_replace):
+            print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
+                                                                      CHAR_TO_REPLACE,
+                                                                      char_to_replace))
+            exit(1)
+        else:
+            white_space_replacement_values[CHAR_TO_REPLACE] = char_to_replace
+
+        char_replacement = white_space_replacement_values.get(CHAR_REPLACEMENT)\
+                                                            .encode('utf-8').decode('unicode_escape')
+        if char_replacement is None or not re.fullmatch('\s', char_replacement):
+            print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
+                                                                      CHAR_REPLACEMENT,
+                                                                      char_replacement))
+            exit(1)
+        else:
+            white_space_replacement_values[CHAR_REPLACEMENT] = char_replacement
+
+        count_of_replaced = white_space_replacement_values.get(COUNT_OF_REPLACED)
+        if count_of_replaced is None or count_of_replaced <= 0:
+            print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
+                                                                      COUNT_OF_REPLACED,
+                                                                      count_of_replaced))
+            exit(1)
+    else:
+        print('{!r}: {!r} has a missing parameter - string_encoding'.format(VALIDATOR_CFG,
+                                                                            WHITE_SPACE_REPLACEMENT))
         exit(1)
 
 
 def run_yara_validator(yara_file, generate_values=True):
     """
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
-        create a YaraValidator object, parse that file with plyara and pass that parsed object and the string representation
-        of the yara file to YaraValidator.valadation
+        create a YaraValidator object, parse that file with plyara and pass that parsed object and the string
+        representation of the yara file to YaraValidator.valadation
     :param yara_file: The file variable passed in. Usually a string or Path variable
     :param generate_values: determine if the values the validator can generate should be generated or not, default True
     :return:
@@ -62,7 +100,10 @@ def run_yara_validator(yara_file, generate_values=True):
         validator_configuration = yaml.safe_load(config_file)
 
     check_validator_cfg(validator_configuration)
-    yara_file_processor = YaraFileProcessor(yara_file)
+    char_to_replace = validator_configuration.get(WHITE_SPACE_REPLACEMENT).get(VALUE).get(CHAR_TO_REPLACE)
+    char_replacement = validator_configuration.get(WHITE_SPACE_REPLACEMENT).get(VALUE).get(CHAR_REPLACEMENT)
+    count_of_replaced = validator_configuration.get(WHITE_SPACE_REPLACEMENT).get(VALUE).get(COUNT_OF_REPLACED)
+    yara_file_processor = YaraFileProcessor(yara_file, char_to_replace, char_replacement, count_of_replaced)
 
     # If there are any issues with the yara file read process exit out and return the error
     if yara_file_processor.return_file_error_state():

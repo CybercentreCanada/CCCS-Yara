@@ -95,7 +95,7 @@ version:
    optional: Optional
    validator: valid_version
 
-minimum_yara:
+yara_version:
    description: 'Minimum version of Yara to run the rule'
    format: 'x.x'
    unique: Yes
