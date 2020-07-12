@@ -45,6 +45,9 @@ rule MemoryModule {
 }
 ```
 
+## YARA repositories using this standard - thanks!
+- https://github.com/reversinglabs/reversinglabs-yara-rules
+
 ## Components
 
 yara_validator.py:		This is the validator library. It is used to validate the metadata section of YARA rules. It verifies specified metadata information, auto-generates some of metadata information and re-sorts the metadata information into the canonical order with all 'unknown' metadata information appended to the bottom.
@@ -153,6 +156,9 @@ rule MemoryModule {
         uint16(0) == 0x5a4d and all of ($api*) and ($func_ptr or $func_ptr_64)
 }
 ```
+
+## Répertoires de règles YARA qui utilise ce standard - merci!
+- https://github.com/reversinglabs/reversinglabs-yara-rules
 
 ## Composantes
 
