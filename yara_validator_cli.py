@@ -48,7 +48,7 @@ parser.add_argument('-s', '--standard', action='store_true', default=False, dest
                     help='This prints the YARA standard to the screen.')
 parser.add_argument('-g', '--generate-values', action='store_false', default=True, dest='generatevalues',
                     help='Generate-values, this is true by default use this flag to prevent values from being'
-                         'generated.')
+                         ' generated.')
 
 parser_group = parser.add_mutually_exclusive_group()
 parser_group.add_argument('-i', '--in-place', action='store_true', default=False, dest='inplace',
