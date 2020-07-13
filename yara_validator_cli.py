@@ -25,7 +25,10 @@ OUTPUT_FILE_LIST = []
 # function.
 parser = argparse.ArgumentParser(description='CCCS YARA script to run the CCCS YARA validator, '
                                              'if the -i or -c flags are not provided no changes '
-                                             'will be made to the files.')
+                                             'will be made to the files. '
+                                             'The default behavior without either of the -i or -c flags is to return '
+                                             'the validity of the file or files if the -i or -c flag had been used. '
+                                             'Use the -g flag to check the current validity of the file or files.')
 parser.add_argument('paths', nargs='+', type=str, default=[],
                     help='A list of files or folders to be analyzed.')
 parser.add_argument('-r', '--recursive', action='store_true', default=False, dest='recursive',
