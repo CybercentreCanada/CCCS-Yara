@@ -509,7 +509,8 @@ class YaraValidator:
                 if value.optional == MetadataOpt.REQ_PROVIDED:
                     valid.update_validity(False, key, 'Missing required metadata')
                 elif value.optional == MetadataOpt.REQ_OPTIONAL:
-                    valid.update_validity(False, key, 'Missing metadata that could have been generated')
+                    valid.update_validity(False, key, '⚙️ Missing metadata that could have been generated with the -i'
+                                                      ' or -c flag for the cli')
             else:
                 if self.required_fields_index[value.position].count > value.max_count and value.max_count != -1:
                     valid.update_validity(False, key, 'Too many instances of metadata value.')

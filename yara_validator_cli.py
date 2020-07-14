@@ -24,11 +24,9 @@ OUTPUT_FILE_LIST = []
 # Defining the parser and arguments to parse so it be used both when called by the command line and with the git_ci
 # function.
 parser = argparse.ArgumentParser(description='CCCS YARA script to run the CCCS YARA validator, '
-                                             'if the -i or -c flags are not provided no changes '
-                                             'will be made to the files. '
-                                             'The default behavior without either of the -i or -c flags is to return '
-                                             'the validity of the file or files if the -i or -c flag had been used. '
-                                             'Use the -g flag to check the current validity of the file or files.')
+                                             'use the -i or -c flags to generate the id, fingerprint, version, '
+                                             'first_imported, or last_modified (if not already present) and add them'
+                                             'to the file.')
 parser.add_argument('paths', nargs='+', type=str, default=[],
                     help='A list of files or folders to be analyzed.')
 parser.add_argument('-r', '--recursive', action='store_true', default=False, dest='recursive',
@@ -46,9 +44,6 @@ parser.add_argument('-w', '--warnings', action='store_true', default=False, dest
                     help='This mode will ignore warnings and proceed with other behaviors if the rule is valid.')
 parser.add_argument('-s', '--standard', action='store_true', default=False, dest='standard',
                     help='This prints the YARA standard to the screen.')
-parser.add_argument('-g', '--generate-values', action='store_false', default=True, dest='generatevalues',
-                    help='Generate-values, this is true by default use this flag to prevent values from being'
-                         ' generated.')
 
 parser_group = parser.add_mutually_exclusive_group()
 parser_group.add_argument('-i', '--in-place', action='store_true', default=False, dest='inplace',
@@ -182,17 +177,22 @@ def __call_validator(options):
                 y_file=yara_rule_path,
             ))
 
-        yara_file_processor = run_yara_validator(yara_rule_path, options.generatevalues)
-        what_will_be_done = 'make no changes'
-        yara_file_output = None
-
         # handle if we want to overwrite or create new files
         if options.createfile:
+            generate_values = True
             yara_file_output = get_yara_file_new_path(yara_rule_path)
             what_will_be_done = 'create a new file with the {} preface.'.format(YARA_VALID_PREFIX)
         elif options.inplace:
+            generate_values = True
             yara_file_output = yara_rule_path
             what_will_be_done = 'modify the file in place.'
+        else:
+            generate_values = False
+            what_will_be_done = 'make no changes'
+            yara_file_output = None
+
+        yara_file_processor = run_yara_validator(yara_rule_path, generate_values)
+
 
         # Prints the output of the validator.
         file_message = '{message:39}{y_file}'
