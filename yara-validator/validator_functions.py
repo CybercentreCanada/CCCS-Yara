@@ -562,7 +562,53 @@ class Validators:
 
         return self.required_fields[place_holder].valid
 
+    def mitre_software_generator(self, rule_to_generate_software, metadata_index, metadata_key):
+        """
+        This will only be looked for if the info|exploit|technique|tool|malware metadata value has already been
+            processed. Current functionality is not to check the value of an existing mitre_group metadata value and
+            just overwrite it as this is automatically filled out. Also if no alias is found it will be removed.
+        :param rule_to_generate_software: the plyara parsed rule that is being validated
+        :param metadata_index: used to reference what the array index of the mitre_group metadata value is
+        :param metadata_key: the name of the metadata value that is being processed
+        :return: This should return True all the time as there will always be a return from self.get_group_from_alias
+        """
+        ACTOR = 'actor'
+        place_holder = self.required_fields[ACTOR].argument.get('child_place_holder')
+        if self.required_fields.get(metadata_key):  # if child place holder is passed as metadata_key
+            MITRE_GROUP = self.required_fields[self.required_fields[metadata_key].argument['parent']].argument['child']
+        else:
+            MITRE_GROUP = metadata_key
 
+        mitre_group = str(Helper.get_group_from_alias(self.mitre_group_alias)).upper()
+        rule_group = {MITRE_GROUP: mitre_group}
+        if Helper.valid_metadata_index(rule_to_generate_group, metadata_index):
+            if list(rule_to_generate_group[METADATA][metadata_index].keys())[0] == MITRE_GROUP:
+                if mitre_group:
+                    rule_to_generate_group[METADATA][metadata_index] = rule_group
+                    self.required_fields[place_holder].attributefound()
+                    self.required_fields[place_holder].attributevalid()
+                    self.required_fields_index[self.required_fields[place_holder].position].increment_count()
+                else:
+                    rule_to_generate_group[METADATA].pop(metadata_index)
+                    return True
+            else:
+                if mitre_group:
+                    rule_to_generate_group[METADATA].insert(metadata_index, rule_group)
+                    self.required_fields[place_holder].attributefound()
+                    self.required_fields[place_holder].attributevalid()
+                    self.required_fields_index[self.required_fields[place_holder].position].increment_count()
+                else:
+                    return True
+        else:
+            if mitre_group:
+                rule_to_generate_group[METADATA].append(rule_group)
+                self.required_fields[place_holder].attributefound()
+                self.required_fields[place_holder].attributevalid()
+                self.required_fields_index[self.required_fields[place_holder].position].increment_count()
+            else:
+                return True
+
+        return self.required_fields[place_holder].valid
 
 
 class Helper:

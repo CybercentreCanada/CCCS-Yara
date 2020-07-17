@@ -213,6 +213,32 @@ class YaraFileProcessor:
         Returns the any file errors and loops through the self.yara_rules array and returns a string for any errors
         :return: error_string, a string of all of the errors concatenated together
         """
+        import warnings
+        warnings.warn(
+            'YaraFileProcessor.return_rule_errors() is deprecated, use YaraFileProcessor.return_file_errors() instead',
+            DeprecationWarning
+        )
+        error_string = ''
+
+        if self.file_errors:
+            error_string = self.__build_return_string(self.errors)
+
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if isinstance(rule.rule_return, YaraReturn):
+                    if rule.return_error():
+                        error_string = error_string + rule.return_errors()
+                else:
+                    if not rule.rule_return.rule_validity:
+                        error_string = error_string + rule.return_errors()
+
+        return error_string
+
+    def return_file_errors(self):
+        """
+        Returns the any file errors and loops through the self.yara_rules array and returns a string for any errors
+        :return: error_string, a string of all of the errors concatenated together
+        """
         error_string = ''
 
         if self.file_errors:
@@ -230,6 +256,38 @@ class YaraFileProcessor:
         return error_string
 
     def return_rule_errors_for_cmlt(self):
+        """
+        Loops throught the self.yara_rules array and returns a string for of errors in cmlt format
+        :return:
+        """
+        import warnings
+        warnings.warn(
+            'YaraFileProcessor.return_rule_errors_for_cmlt() is deprecated, '
+            'use YaraFileProcessor.return_file_errors_for_cmlt() instead',
+            DeprecationWarning
+        )
+        error_string = ''
+
+        if self.file_errors:
+            error_string = self.__build_return_string_cmlt(self.errors)
+
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if isinstance(rule.rule_return, YaraReturn):
+                    if rule.return_error():
+                        error_string = error_string + "{indent:>8} {name:10}".format(indent="- ",
+                                                                                     name=rule.get_rule_name() + ":\n")
+                        error_string = error_string + rule.rule_plyara["rule_name"] + "\n"
+                        error_string = error_string + rule.return_errors_for_cmlt()
+                else:
+                    if not rule.rule_return.rule_validity:
+                        error_string = error_string + "{indent:>8} {name:10}".format(indent="- ",
+                                                                                     name=rule.get_rule_name() + ":\n")
+                        error_string = error_string + rule.return_errors_for_cmlt()
+
+        return error_string
+
+    def return_file_errors_for_cmlt(self):
         """
         Loops throught the self.yara_rules array and returns a string for of errors in cmlt format
         :return:
@@ -260,6 +318,26 @@ class YaraFileProcessor:
         Loops through the self.yara_rules array and returns true if any of the rules are in a warning state
         :return:
         """
+        import warnings
+        warnings.warn(
+            'YaraFileProcessor.return_rule_warning_state() is deprecated, '
+            'use YaraFileProcessor.return_file_warning_state() instead',
+            DeprecationWarning
+        )
+        warning_state = False
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if rule.return_warning():
+                    warning_state = True
+                    break
+
+        return warning_state
+
+    def return_file_warning_state(self):
+        """
+        Loops through the self.yara_rules array and returns true if any of the rules are in a warning state
+        :return:
+        """
         warning_state = False
         for rule in self.yara_rules:
             if rule.rule_return:
@@ -274,6 +352,26 @@ class YaraFileProcessor:
         Loops throught the self.yara_rules array and returns a string for of warnings
         :return:
         """
+        import warnings
+        warnings.warn(
+            'YaraFileProcessor.return_rule_warnings() is deprecated, '
+            'use YaraFileProcessor.return_file_warnings() instead',
+            DeprecationWarning
+        )
+        warning_string = ''
+
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if rule.return_warning():
+                    warning_string = warning_string + rule.return_warnings()
+
+        return warning_string
+
+    def return_file_warnings(self):
+        """
+        Loops throught the self.yara_rules array and returns a string for of warnings
+        :return:
+        """
         warning_string = ''
 
         for rule in self.yara_rules:
@@ -284,6 +382,28 @@ class YaraFileProcessor:
         return warning_string
 
     def return_rule_warnings_for_cmlt(self):
+        """
+        Loops throught the self.yara_rules array and returns a string for of warnings in cmlt format
+        :return:
+        """
+        import warnings
+        warnings.warn(
+            'YaraFileProcessor.return_rule_warnings_for_cmlt() is deprecated, '
+            'use YaraFileProcessor.return_file_warnings_for_cmlt() instead',
+            DeprecationWarning
+        )
+        warning_string = ''
+
+        for rule in self.yara_rules:
+            if rule.rule_return:
+                if rule.return_warning():
+                    warning_string = warning_string + "{indent:>8} {name:10}".format(indent="- ",
+                                                                                     name=rule.get_rule_name() + ":\n")
+                    warning_string = warning_string + rule.return_warnings_for_cmlt()
+
+        return warning_string
+
+    def return_file_warnings_for_cmlt(self):
         """
         Loops throught the self.yara_rules array and returns a string for of warnings in cmlt format
         :return:
@@ -304,6 +424,19 @@ class YaraFileProcessor:
         Returns the original rule string
         :return:
         """
+        import warnings
+        warnings.warn(
+            'YaraFileProcessor.return_original_rule() is deprecated, '
+            'use YaraFileProcessor.return_original_file() instead',
+            DeprecationWarning
+        )
+        return self.original_rule_string
+
+    def return_original_file(self):
+        """
+        Returns the original rule string
+        :return:
+        """
         return self.original_rule_string
 
     def return_edited_rule(self):
@@ -311,7 +444,21 @@ class YaraFileProcessor:
         Returns the edited rule string
         :return:
         """
+        import warnings
+        warnings.warn(
+            'YaraFileProcessor.return_original_rule() is deprecated, '
+            'use YaraFileProcessor.return_original_file() instead',
+            DeprecationWarning
+        )
         return self.edited_rule_string
+
+    def return_edited_file(self):
+        """
+        Returns the edited rule string
+        :return:
+        """
+        return self.edited_rule_string
+
 
 
 class YaraRule:

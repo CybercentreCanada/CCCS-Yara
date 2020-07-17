@@ -118,7 +118,7 @@ def print_errors(yara_file_processor, options):
 
 
 def print_warnings(yara_file_processor, options):
-    if yara_file_processor.return_rule_warning_state and not options.warnings:
+    if yara_file_processor.return_rule_warning_state() and not options.warnings:
         print(colored.yellow('{indent:>7}{message}'.format(indent='- ', message='Warnings:')))
         print(colored.white(yara_file_processor.return_rule_warnings_for_cmlt()))
 
@@ -211,7 +211,7 @@ def __call_validator(options):
                 print_errors(yara_file_processor, options)
                 print_warnings(yara_file_processor, options)
 
-        elif yara_file_processor.return_rule_warning_state() and not options.warnings:
+        elif yara_file_processor.return_file_warning_state() and not options.warnings:
             # The rule is valid, has warnings and warning are turned on
 
             all_warning_rule_returns.append((yara_rule_path, yara_file_processor))
