@@ -79,39 +79,34 @@ yara_validator_cli.py -h
    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
     
-usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-g]
+usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s]
                              [-i | -c]
                              paths [paths ...]
 
-CCCS YARA script to run the CCCS YARA validator, if the -i or -c flags are not
-provided no changes will be made to the files. The default behavior without
-either of the -i or -c flags is to return the validity of the file or files if
-the -i or -c flag had been used. Use the -g flag to check the current validity
-of the file or files.
+CCCS YARA script to run the CCCS YARA validator, use the -i or -c flags to
+generate the id, fingerprint, version, first_imported, or last_modified (if
+not already present) and add them to the file.
 
 positional arguments:
-  paths                 A list of files or folders to be analyzed.
+  paths                A list of files or folders to be analyzed.
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -r, --recursive       Recursively search folders provided.
-  -n, --no-changes      Makes no changes and outputs potential results to the
-                        output.
-  -v, --verbose         Verbose mode, will print why a rule was invalid.
-  -vv, --very-verbose   Very-verbose mode, will printout what rule is about to
-                        be processed, the invalid rules, the reasons they are
-                        invalid and all contents of the rule.
-  -f, --fail            Fail mode, only prints messages about invalid rules.
-  -w, --warnings        This mode will ignore warnings and proceed with other
-                        behaviors if the rule is valid.
-  -s, --standard        This prints the YARA standard to the screen.
-  -g, --generate-values
-                        Generate-values, this is true by default use this flag
-                        to prevent values from being generated.
-  -i, --in-place        Modifies valid files in place, mutually exclusive with
-                        -c.
-  -c, --create-files    Writes a new file for each valid file, mutually
-                        exclusive with -i.
+  -h, --help           show this help message and exit
+  -r, --recursive      Recursively search folders provided.
+  -n, --no-changes     Makes no changes and outputs potential results to the
+                       output.
+  -v, --verbose        Verbose mode, will print why a rule was invalid.
+  -vv, --very-verbose  Very-verbose mode, will printout what rule is about to
+                       be processed, the invalid rules, the reasons they are
+                       invalid and all contents of the rule.
+  -f, --fail           Fail mode, only prints messages about invalid rules.
+  -w, --warnings       This mode will ignore warnings and proceed with other
+                       behaviors if the rule is valid.
+  -s, --standard       This prints the YARA standard to the screen.
+  -i, --in-place       Modifies valid files in place, mutually exclusive with
+                       -c.
+  -c, --create-files   Writes a new file for each valid file, mutually
+                       exclusive with -i.
   ```
 
 
@@ -197,38 +192,33 @@ yara_validator_cli.py -h
    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
     
-usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-g]
+usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s]
                              [-i | -c]
                              paths [paths ...]
 
-CCCS YARA script to run the CCCS YARA validator, if the -i or -c flags are not
-provided no changes will be made to the files. The default behavior without
-either of the -i or -c flags is to return the validity of the file or files if
-the -i or -c flag had been used. Use the -g flag to check the current validity
-of the file or files.
+CCCS YARA script to run the CCCS YARA validator, use the -i or -c flags to
+generate the id, fingerprint, version, first_imported, or last_modified (if
+not already present) and add them to the file.
 
 positional arguments:
-  paths                 A list of files or folders to be analyzed.
+  paths                A list of files or folders to be analyzed.
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -r, --recursive       Recursively search folders provided.
-  -n, --no-changes      Makes no changes and outputs potential results to the
-                        output.
-  -v, --verbose         Verbose mode, will print why a rule was invalid.
-  -vv, --very-verbose   Very-verbose mode, will printout what rule is about to
-                        be processed, the invalid rules, the reasons they are
-                        invalid and all contents of the rule.
-  -f, --fail            Fail mode, only prints messages about invalid rules.
-  -w, --warnings        This mode will ignore warnings and proceed with other
-                        behaviors if the rule is valid.
-  -s, --standard        This prints the YARA standard to the screen.
-  -g, --generate-values
-                        Generate-values, this is true by default use this flag
-                        to prevent values from being generated.
-  -i, --in-place        Modifies valid files in place, mutually exclusive with
-                        -c.
-  -c, --create-files    Writes a new file for each valid file, mutually
-                        exclusive with -i.
+  -h, --help           show this help message and exit
+  -r, --recursive      Recursively search folders provided.
+  -n, --no-changes     Makes no changes and outputs potential results to the
+                       output.
+  -v, --verbose        Verbose mode, will print why a rule was invalid.
+  -vv, --very-verbose  Very-verbose mode, will printout what rule is about to
+                       be processed, the invalid rules, the reasons they are
+                       invalid and all contents of the rule.
+  -f, --fail           Fail mode, only prints messages about invalid rules.
+  -w, --warnings       This mode will ignore warnings and proceed with other
+                       behaviors if the rule is valid.
+  -s, --standard       This prints the YARA standard to the screen.
+  -i, --in-place       Modifies valid files in place, mutually exclusive with
+                       -c.
+  -c, --create-files   Writes a new file for each valid file, mutually
+                       exclusive with -i.
   ```
 

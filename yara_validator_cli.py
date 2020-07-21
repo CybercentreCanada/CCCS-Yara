@@ -25,7 +25,7 @@ OUTPUT_FILE_LIST = []
 # function.
 parser = argparse.ArgumentParser(description='CCCS YARA script to run the CCCS YARA validator, '
                                              'use the -i or -c flags to generate the id, fingerprint, version, '
-                                             'first_imported, or last_modified (if not already present) and add them'
+                                             'first_imported, or last_modified (if not already present) and add them '
                                              'to the file.')
 parser.add_argument('paths', nargs='+', type=str, default=[],
                     help='A list of files or folders to be analyzed.')
