@@ -28,6 +28,9 @@ REPORT = 'report'
 HASH = 'hash'
 ACTOR = 'actor'
 AUTHOR = 'author'
+CATEGORY = 'category'
+CATEGORY_TYPE = 'info|exploit|technique|tool|malware'
+MITRE_ATT = 'mitre_att'
 VALUE = 'value'
 STRING_ENCODING = 'string_encoding'
 WHITE_SPACE_REPLACEMENT = 'white_space_replacement'
@@ -355,6 +358,8 @@ class YaraValidator:
 
         self.validators = Validators()
         self.required_fields = {}
+        self.metadata_keys_regex = r''
+        self.metadata_keys_filter = r'^malware_type$'
         self.import_yara_cfg()
 
         self.required_fields_index = [Positional(i) for i in range(len(self.required_fields))]
@@ -366,7 +371,9 @@ class YaraValidator:
         self.warning_functions = [
             self.warning_author_no_report_check,
             self.warning_author_no_hash_check,
-            self.warning_actor_no_mitre_group
+            self.warning_actor_no_mitre_group,
+            self.warning_no_category_type,
+            self.warning_common_metadata_errors
         ]
 
     previous_position_values = None
@@ -480,9 +487,9 @@ class YaraValidator:
                     metadata_index_and_metadata = {key: metadata_index}
                     meta_not_initially_found.append(metadata_index_and_metadata)
 
-        meta_not_initially_found.reverse()
-        for metadata_to_check in meta_not_initially_found:
-            if len(metadata_to_check.keys()) == 1:
+        while meta_not_initially_found:
+            no_children_keys_found = True
+            for metadata_to_check in list(meta_not_initially_found):
                 key_to_match = list(metadata_to_check.keys())[0]
                 metadata_index = list(metadata_to_check.values())[0]
 
@@ -492,10 +499,15 @@ class YaraValidator:
                     value = list(metadata.values())[0]
 
                     if key in self.required_fields_children:
+                        no_children_keys_found = False
+                        meta_not_initially_found.remove(metadata_to_check)
                         validity, rule_response = self.process_key(key, self.required_fields_children, rule_to_validate,
                                                                    metadata_index)
                         if not validity:
                             valid.update_validity(validity, key, rule_response)
+
+            if no_children_keys_found:
+                meta_not_initially_found = []
 
         for empty_metadata in sorted(index_of_empty_metadata, reverse=True):
             if list(rule_to_validate[METADATA][empty_metadata].values())[0] == '':
@@ -571,8 +583,32 @@ class YaraValidator:
                             warning_message = 'Actor: {!r} was not found in MITRE ATT&CK dataset.'.format(value)
                             valid.update_warning(True, ACTOR, warning_message)
 
+    def warning_no_category_type(self, rule_to_check, valid):
+        category_child_place_holder = self.required_fields[CATEGORY].argument.get('child_place_holder')
+        if self.required_fields.get(CATEGORY).found and not self.required_fields.get(category_child_place_holder).found:
+            metadata_values = rule_to_check[METADATA]
+            for value in metadata_values:
+                if len(value.keys()) == 1:
+                    key = list(value.keys())[0]
+                    value = list(value.values())[0]
+                    if key == CATEGORY:
+                        warning_message = 'Category: {!r} was selected but there is no associated metadate with more' \
+                                          'information i.e. malware: "name of the malware".'.format(value)
+                        valid.update_warning(True, CATEGORY_TYPE, warning_message)
+
+    def warning_common_metadata_errors(self, rule_to_check, valid):
+        metadata_values = rule_to_check[METADATA]
+        for value in metadata_values:
+            if len(value.keys()) == 1:
+                key = list(value.keys())[0]
+                value = list(value.values())[0]
+                if re.fullmatch(self.metadata_keys_regex, key) and not re.fullmatch(self.metadata_keys_filter, key):
+                    warning_message = 'Key: {!r} has a similar name to a key in the standard but was not validated' \
+                                        'because it did not match the standard.'.format(key)
+                    valid.update_warning(True, key, warning_message)
+
     def generate_required_optional_metadata(self, rule_to_validate):
-        req_optional_keys = self.return_req_optional()
+        req_optional_keys = self.return_req_optional(rule_to_validate)
 
         for key in req_optional_keys:
             if not self.required_fields[key].found:
@@ -582,7 +618,7 @@ class YaraValidator:
                     self.required_fields[key].function(rule_to_validate, self.required_fields_index[
                         self.required_fields[key].position].index(), key)
 
-    def return_req_optional(self):
+    def return_req_optional(self, rule_to_validate):
         keys_to_return = []
         for key in self.required_fields.keys():
             if self.required_fields[key].optional == MetadataOpt.REQ_OPTIONAL:
@@ -590,7 +626,12 @@ class YaraValidator:
                     keys_to_return.append(key)
 
         if self.__mitre_group_alias() and self.required_fields[ACTOR].found:
-            keys_to_return.append(self.required_fields[ACTOR].argument.get("child_place_holder"))
+            keys_to_return.append(self.required_fields[ACTOR].argument.get('child_place_holder'))
+
+        category_type = self.required_fields[CATEGORY].argument.get('child_place_holder')
+        if self.required_fields[category_type].argument.get('malwareIdsFound'):
+            self.validators.mitre_software_generator(rule_to_validate, CATEGORY, MITRE_ATT)
+
         return keys_to_return
 
     def __mitre_group_alias(self):
@@ -627,7 +668,8 @@ class YaraValidator:
             if argument.get('parent'):
                 self.required_fields[metadata + place_holder] = self.required_fields.pop(metadata)
                 metadata_in_child_parent_relationship.append(argument.get('parent'))
-            elif argument.get('child'):
+
+            if argument.get('child'):
                 child_metadata = argument['child']
                 argument.update({'child_place_holder': child_metadata + place_holder})
                 metadata_in_child_parent_relationship.append(argument.get('child'))
@@ -787,11 +829,16 @@ class YaraValidator:
         for index, item in enumerate(self.yara_config.items()):  # python 3.6+ dictionary preserves the insertion order
             cfg_metadata = item[0]
             cfg_params = item[1]  # {parameter : value}
-
+            if cfg_metadata == 'info|exploit|technique|tool|malware':
+                self.metadata_keys_regex = self.metadata_keys_regex\
+                                           + '^info.+|^exploit.+|^technique.+|^tool.+|^malware.+|'
+            else:
+                self.metadata_keys_regex = self.metadata_keys_regex + '^' + cfg_metadata + '.+|'
             self.required_fields[cfg_metadata] = self.read_yara_cfg(cfg_metadata, cfg_params,
                                                                     index)  # add a new MetadataAttributes instance
             self.handle_child_parent_metadata(cfg_metadata, cfg_params,
                                               metadata_in_child_parent_relationship)  # replace the name of child metadata with its place holder
         self.validate_child_parent_metadata(self.yara_config,
                                             metadata_in_child_parent_relationship)  # check if any metadata in child-parent relationship are missing
+        self.metadata_keys_regex = self.metadata_keys_regex[:-1]
 
