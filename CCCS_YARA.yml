@@ -37,6 +37,8 @@
 #        - child: name of a child metadata (mutually exclusive with parent)
 #        - parent: name of a parent metadata (mutually exclusive with child)
 #        - <custom parameter>: any custom parameter that will be passed to the validator as a part of "argument"
+#                             (info|exploit|technique|tool|malware and mitre_att below have examples of some arguments
+#                             that are passed into facilitate some more complex behaviors)
 #
 # --NOTE--
 # 1. "unique" and "optional" are required fields.
@@ -182,15 +184,19 @@ category:
       child: info|exploit|technique|tool|malware
 
 info|exploit|technique|tool|malware:
-   description: 'Specific information about the category'
+   description: 'Specific information about the category.
+                  if_key_gen_mitre_att: is used to define which keys will been used to generate mitre_att software ids
+                  mitre_softwareid_gen: is an array that will be used during runtime to store software ids generated,
+                                        this will be compared with mitre_softwareid_found and values not found there
+                                        will be generated'
    format: 'uppercase'
    unique: No
    optional: Yes
    validator: valid_category_type
    argument:
       parent: category
-      ifKeyGenMitreAtt: malware
-      malwareIdsFound:
+      if_key_gen_mitre_att: ^tool$|^malware$
+      mitre_softwareid_gen: []
 
 malware_type:
    description: 'Give an indication as to what the capability/purpose of the malware is'
@@ -203,13 +209,14 @@ malware_type:
       valueName: malware_types
 
 mitre_att:
-   description: 'Any valid MITRE ATT&CK ID codes'
+   description: 'Any valid MITRE ATT&CK ID codes
+                  mitre_softwareid_found: is an array that will be used during runtime to store software ids found'
    format: "'TA####'|'T####'|'M####'|'G####'|'S####'"
    unique: No
    optional: Yes
    validator: valid_mitre_att
    argument:
-      softCodesFound:
+      mitre_softwareid_found: []
 
 actor_type:
    description: 'The type of the actor'

@@ -359,7 +359,7 @@ class YaraValidator:
         self.validators = Validators()
         self.required_fields = {}
         self.metadata_keys_regex = r''
-        self.metadata_keys_filter = r'^malware_type$'
+        self.metadata_keys_filter = r'^malware_type$|^actor_type$'
         self.import_yara_cfg()
 
         self.required_fields_index = [Positional(i) for i in range(len(self.required_fields))]
@@ -629,7 +629,7 @@ class YaraValidator:
             keys_to_return.append(self.required_fields[ACTOR].argument.get('child_place_holder'))
 
         category_type = self.required_fields[CATEGORY].argument.get('child_place_holder')
-        if self.required_fields[category_type].argument.get('malwareIdsFound'):
+        if self.required_fields[category_type].argument.get('mitre_softwareid_gen'):
             self.validators.mitre_software_generator(rule_to_validate, CATEGORY, MITRE_ATT)
 
         return keys_to_return

@@ -371,13 +371,10 @@ class Validators:
             self.required_fields[MITRE_ATT].attributeinvalid()
 
         if self.required_fields[MITRE_ATT].valid and mitre_att_to_validate.startswith('S'):
-            soft_codes_found = self.required_fields[MITRE_ATT].argument.get('softCodesFound')
-            if not soft_codes_found:
-                soft_codes_found = [mitre_att_to_validate]
-            else:
-                soft_codes_found.append(mitre_att_to_validate)
+            soft_codes_found = self.required_fields[MITRE_ATT].argument.get('mitre_softwareid_found')
+            soft_codes_found.append(mitre_att_to_validate)
 
-            self.required_fields[MITRE_ATT].argument.update({'softCodesFound': soft_codes_found})
+            self.required_fields[MITRE_ATT].argument.update({'mitre_softwareid_found': soft_codes_found})
 
         return self.required_fields[MITRE_ATT].valid
 
@@ -472,8 +469,8 @@ class Validators:
         child_metadata_place_holder = self.required_fields[CATEGORY].argument.get('child_place_holder')
         self.required_fields[child_metadata_place_holder].attributefound()
         self.required_fields_index[self.required_fields[child_metadata_place_holder].position].increment_count()
-        key_gen_mitre_att = r'^' + self.required_fields[child_metadata_place_holder].argument.get('ifKeyGenMitreAtt')\
-                            + '$'
+        key_gen_mitre_att = r'' +\
+                            self.required_fields[child_metadata_place_holder].argument.get('if_key_gen_mitre_att')
 
         metadata = rule_to_validate_type[METADATA]
         rule_category_key_to_check = list(metadata[metadata_index].keys())[0]
@@ -492,13 +489,10 @@ class Validators:
                                                                                     rule_category_key_to_check):
             malware_id = Helper.get_software_id_by_name(rule_category_value_to_check)
             if malware_id:
-                malware_ids_found = self.required_fields[child_metadata_place_holder].argument.get('malwareIdsFound')
-                if not malware_ids_found:
-                    malware_ids_found = [malware_id]
-                else:
-                    malware_ids_found.append(malware_id)
+                malware_ids_found = self.required_fields[child_metadata_place_holder].argument.get('mitre_softwareid_gen')
+                malware_ids_found.append(malware_id)
 
-                self.required_fields[child_metadata_place_holder].argument.update({'malwareIdsFound': malware_ids_found})
+                self.required_fields[child_metadata_place_holder].argument.update({'mitre_softwareid_gen': malware_ids_found})
 
         return self.required_fields[child_metadata_place_holder].valid
 
@@ -606,8 +600,8 @@ class Validators:
         MITRE_ATT = mitre_key
         child_metadata_place_holder = self.required_fields[CATEGORY].argument.get('child_place_holder')
 
-        malware_ids_found = self.required_fields[child_metadata_place_holder].argument.get('malwareIdsFound')
-        soft_codes_found = self.required_fields[MITRE_ATT].argument.get('softCodesFound')
+        malware_ids_found = self.required_fields[child_metadata_place_holder].argument.get('mitre_softwareid_gen')
+        soft_codes_found = self.required_fields[MITRE_ATT].argument.get('mitre_softwareid_found')
         if not soft_codes_found:
             soft_codes_found = []
 
