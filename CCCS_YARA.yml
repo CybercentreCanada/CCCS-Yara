@@ -195,8 +195,7 @@ info|exploit|technique|tool|malware:
    validator: valid_category_type
    argument:
       parent: category
-      if_key_gen_mitre_att: ^tool$|^malware$
-      mitre_softwareid_gen: []
+      generate_mitre_att_from: ^tool$|^malware$
 
 malware_type:
    description: 'Give an indication as to what the capability/purpose of the malware is'
@@ -215,8 +214,6 @@ mitre_att:
    unique: No
    optional: Yes
    validator: valid_mitre_att
-   argument:
-      mitre_softwareid_found: []
 
 actor_type:
    description: 'The type of the actor'

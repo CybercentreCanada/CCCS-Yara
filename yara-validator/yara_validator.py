@@ -8,7 +8,7 @@ from plyara.utils import rebuild_yara_rule
 # for querying the MITRE ATT&CK data
 from stix2 import FileSystemSource
 
-from validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
+from validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding, Helper
 from yara_file_processor import YaraFileProcessor, YaraRule
 
 # set current working directory
@@ -31,6 +31,8 @@ AUTHOR = 'author'
 CATEGORY = 'category'
 CATEGORY_TYPE = 'info|exploit|technique|tool|malware'
 MITRE_ATT = 'mitre_att'
+CHILD_PLACE_HOLDER = 'child_place_holder'
+MITRE_SOFTWAREID_GEN = 'mitre_softwareid_gen'
 VALUE = 'value'
 STRING_ENCODING = 'string_encoding'
 WHITE_SPACE_REPLACEMENT = 'white_space_replacement'
@@ -571,8 +573,8 @@ class YaraValidator:
                             valid.update_warning(True, HASH, 'Rule is authored by the CCCS but no hash is referenced.')
 
     def warning_actor_no_mitre_group(self, rule_to_check, valid):
-        if self.required_fields.get(ACTOR) and self.required_fields[ACTOR].argument.get('child_place_holder'):
-            place_holder = self.required_fields[ACTOR].argument.get('child_place_holder')
+        if self.required_fields.get(ACTOR) and self.required_fields[ACTOR].argument.get(CHILD_PLACE_HOLDER):
+            place_holder = self.required_fields[ACTOR].argument.get(CHILD_PLACE_HOLDER)
             if self.required_fields[ACTOR].found and not self.required_fields[place_holder].found:
                 metadata_values = rule_to_check[METADATA]
                 for value in metadata_values:
@@ -584,7 +586,7 @@ class YaraValidator:
                             valid.update_warning(True, ACTOR, warning_message)
 
     def warning_no_category_type(self, rule_to_check, valid):
-        category_child_place_holder = self.required_fields[CATEGORY].argument.get('child_place_holder')
+        category_child_place_holder = self.required_fields[CATEGORY].argument.get(CHILD_PLACE_HOLDER)
         if self.required_fields.get(CATEGORY).found and not self.required_fields.get(category_child_place_holder).found:
             metadata_values = rule_to_check[METADATA]
             for value in metadata_values:
@@ -592,7 +594,7 @@ class YaraValidator:
                     key = list(value.keys())[0]
                     value = list(value.values())[0]
                     if key == CATEGORY:
-                        warning_message = 'Category: {!r} was selected but there is no associated metadate with more' \
+                        warning_message = 'Category: {!r} was selected but there is no associated metadate with more ' \
                                           'information i.e. malware: "name of the malware".'.format(value)
                         valid.update_warning(True, CATEGORY_TYPE, warning_message)
 
@@ -626,10 +628,10 @@ class YaraValidator:
                     keys_to_return.append(key)
 
         if self.__mitre_group_alias() and self.required_fields[ACTOR].found:
-            keys_to_return.append(self.required_fields[ACTOR].argument.get('child_place_holder'))
+            keys_to_return.append(self.required_fields[ACTOR].argument.get(CHILD_PLACE_HOLDER))
 
-        category_type = self.required_fields[CATEGORY].argument.get('child_place_holder')
-        if self.required_fields[category_type].argument.get('mitre_softwareid_gen'):
+        category_type = self.required_fields[CATEGORY].argument.get(CHILD_PLACE_HOLDER)
+        if Helper.check_argument_list_var(self.required_fields, category_type, MITRE_SOFTWAREID_GEN):
             self.validators.mitre_software_generator(rule_to_validate, CATEGORY, MITRE_ATT)
 
         return keys_to_return
@@ -671,7 +673,7 @@ class YaraValidator:
 
             if argument.get('child'):
                 child_metadata = argument['child']
-                argument.update({'child_place_holder': child_metadata + place_holder})
+                argument.update({CHILD_PLACE_HOLDER: child_metadata + place_holder})
                 metadata_in_child_parent_relationship.append(argument.get('child'))
 
     def validate_child_parent_metadata(self, configuration, metadata_in_child_parent_relationship):

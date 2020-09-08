@@ -17,7 +17,7 @@ METADATA = 'metadata'
 BASE62_REGEX = r'^[0-9a-zA-z]+$'
 UNIVERSAL_REGEX = r'^[^a-z]*$'
 MITRE_GROUP_NAME = 'name'
-
+CHILD_PLACE_HOLDER = 'child_place_holder'
 
 # potential values of MetadataAttributes.optional variable
 class MetadataOpt(Enum):
@@ -359,6 +359,7 @@ class Validators:
         :return: True if the value was found in the MITRE ATT&CK database and False if it was not found
         """
         MITRE_ATT = metadata_key
+        MITRE_SOFTWAREID_FOUND = 'mitre_softwareid_found'
         self.required_fields[MITRE_ATT].attributefound()
         self.required_fields_index[self.required_fields[MITRE_ATT].position].increment_count()
 
@@ -371,10 +372,8 @@ class Validators:
             self.required_fields[MITRE_ATT].attributeinvalid()
 
         if self.required_fields[MITRE_ATT].valid and mitre_att_to_validate.startswith('S'):
-            soft_codes_found = self.required_fields[MITRE_ATT].argument.get('mitre_softwareid_found')
+            soft_codes_found = Helper.check_argument_list_var(self.required_fields, MITRE_ATT, MITRE_SOFTWAREID_FOUND)
             soft_codes_found.append(mitre_att_to_validate)
-
-            self.required_fields[MITRE_ATT].argument.update({'mitre_softwareid_found': soft_codes_found})
 
         return self.required_fields[MITRE_ATT].valid
 
@@ -433,7 +432,7 @@ class Validators:
         CATEGORY = metadata_key
         self.required_fields[CATEGORY].attributefound()
         self.required_fields_index[self.required_fields[CATEGORY].position].increment_count()
-        child_metadata_place_holder = self.required_fields[CATEGORY].argument.get('child_place_holder')
+        child_metadata_place_holder = self.required_fields[CATEGORY].argument.get(CHILD_PLACE_HOLDER)
 
         metadata = rule_to_validate_category[METADATA]
         rule_category_to_check = metadata[metadata_index][CATEGORY]
@@ -466,11 +465,13 @@ class Validators:
         :return: True if the value matches the Regex expression and False if it was not found
         """
         CATEGORY = 'category'
-        child_metadata_place_holder = self.required_fields[CATEGORY].argument.get('child_place_holder')
+        GENERATE_MITRE_ATT_FROM = 'generate_mitre_att_from'
+        MITRE_SOFTWAREID_GEN = 'mitre_softwareid_gen'
+        child_metadata_place_holder = self.required_fields[CATEGORY].argument.get(CHILD_PLACE_HOLDER)
         self.required_fields[child_metadata_place_holder].attributefound()
         self.required_fields_index[self.required_fields[child_metadata_place_holder].position].increment_count()
         key_gen_mitre_att = r'' +\
-                            self.required_fields[child_metadata_place_holder].argument.get('if_key_gen_mitre_att')
+                            self.required_fields[child_metadata_place_holder].argument.get(GENERATE_MITRE_ATT_FROM)
 
         metadata = rule_to_validate_type[METADATA]
         rule_category_key_to_check = list(metadata[metadata_index].keys())[0]
@@ -489,10 +490,9 @@ class Validators:
                                                                                     rule_category_key_to_check):
             malware_id = Helper.get_software_id_by_name(rule_category_value_to_check)
             if malware_id:
-                malware_ids_found = self.required_fields[child_metadata_place_holder].argument.get('mitre_softwareid_gen')
+                malware_ids_found = Helper.check_argument_list_var(self.required_fields, child_metadata_place_holder,
+                                                                   MITRE_SOFTWAREID_GEN)
                 malware_ids_found.append(malware_id)
-
-                self.required_fields[child_metadata_place_holder].argument.update({'mitre_softwareid_gen': malware_ids_found})
 
         return self.required_fields[child_metadata_place_holder].valid
 
@@ -510,7 +510,7 @@ class Validators:
         ACTOR = metadata_key
         ACTOR_TYPE = self.required_fields[ACTOR].argument.get('required')
         child_metadata = self.required_fields[ACTOR].argument.get('child')
-        child_metadata_place_holder = self.required_fields[ACTOR].argument.get('child_place_holder')
+        child_metadata_place_holder = self.required_fields[ACTOR].argument.get(CHILD_PLACE_HOLDER)
         mitre_group_alias_regex = r'^[^a-z]+$'
 
         self.required_fields[ACTOR].attributefound()
@@ -548,7 +548,7 @@ class Validators:
         :return: This should return True all the time as there will always be a return from self.get_group_from_alias
         """
         ACTOR = 'actor'
-        place_holder = self.required_fields[ACTOR].argument.get('child_place_holder')
+        place_holder = self.required_fields[ACTOR].argument.get(CHILD_PLACE_HOLDER)
         if self.required_fields.get(metadata_key):  # if child place holder is passed as metadata_key
             MITRE_GROUP = self.required_fields[self.required_fields[metadata_key].argument['parent']].argument['child']
         else:
@@ -598,12 +598,12 @@ class Validators:
         """
         CATEGORY = category_key
         MITRE_ATT = mitre_key
-        child_metadata_place_holder = self.required_fields[CATEGORY].argument.get('child_place_holder')
+        MITRE_SOFTWAREID_GEN = 'mitre_softwareid_gen'
+        MITRE_SOFTWAREID_FOUND = 'mitre_softwareid_found'
+        child_metadata_place_holder = self.required_fields[CATEGORY].argument.get(CHILD_PLACE_HOLDER)
 
-        malware_ids_found = self.required_fields[child_metadata_place_holder].argument.get('mitre_softwareid_gen')
-        soft_codes_found = self.required_fields[MITRE_ATT].argument.get('mitre_softwareid_found')
-        if not soft_codes_found:
-            soft_codes_found = []
+        malware_ids_found = Helper.check_argument_list_var(self.required_fields, child_metadata_place_holder, MITRE_SOFTWAREID_GEN)
+        soft_codes_found = Helper.check_argument_list_var(self.required_fields, MITRE_ATT, MITRE_SOFTWAREID_FOUND)
 
         for malware_id_found in malware_ids_found:
             if malware_id_found not in soft_codes_found:
@@ -940,3 +940,14 @@ class Helper:
             return tool_return[0]['external_references'][0]['external_id']
         else:
             return ''
+
+    @staticmethod
+    def check_argument_list_var(required_fields, metadata, variable_name):
+        if not required_fields[metadata].argument:
+            required_fields[metadata].argument = {variable_name: []}
+        elif not required_fields[metadata].argument.get(variable_name):
+            required_fields[metadata].argument.update({variable_name: []})
+        elif not isinstance(required_fields[metadata].argument.get(variable_name), list):
+            required_fields[metadata].argument.update({variable_name: []})
+
+        return required_fields[metadata].argument.get(variable_name)
