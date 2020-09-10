@@ -8,7 +8,7 @@ from plyara.utils import rebuild_yara_rule
 # for querying the MITRE ATT&CK data
 from stix2 import FileSystemSource
 
-from validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding, Helper
+from validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
 from yara_file_processor import YaraFileProcessor, YaraRule
 
 # set current working directory
@@ -303,6 +303,14 @@ class MetadataAttributes:
     def attributereset(self):
         self.found = False
         self.valid = False
+
+    def check_argument_list_var(self, variable_name):
+        if not self.argument or not isinstance(self.argument, dict):
+            self.argument = {variable_name: []}
+        elif not self.argument.get(variable_name) or not isinstance(self.argument.get(variable_name), list):
+            self.argument.update({variable_name: []})
+
+        return self.argument.get(variable_name)
 
 
 class Positional:
@@ -631,7 +639,7 @@ class YaraValidator:
             keys_to_return.append(self.required_fields[ACTOR].argument.get(CHILD_PLACE_HOLDER))
 
         category_type = self.required_fields[CATEGORY].argument.get(CHILD_PLACE_HOLDER)
-        if Helper.check_argument_list_var(self.required_fields, category_type, MITRE_SOFTWAREID_GEN):
+        if self.required_fields[category_type].check_argument_list_var(MITRE_SOFTWAREID_GEN):
             self.validators.mitre_software_generator(rule_to_validate, CATEGORY, MITRE_ATT)
 
         return keys_to_return

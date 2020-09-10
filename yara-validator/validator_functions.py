@@ -372,7 +372,7 @@ class Validators:
             self.required_fields[MITRE_ATT].attributeinvalid()
 
         if self.required_fields[MITRE_ATT].valid and mitre_att_to_validate.startswith('S'):
-            soft_codes_found = Helper.check_argument_list_var(self.required_fields, MITRE_ATT, MITRE_SOFTWAREID_FOUND)
+            soft_codes_found = self.required_fields[MITRE_ATT].check_argument_list_var(MITRE_SOFTWAREID_FOUND)
             soft_codes_found.append(mitre_att_to_validate)
 
         return self.required_fields[MITRE_ATT].valid
@@ -490,8 +490,8 @@ class Validators:
                                                                                     rule_category_key_to_check):
             malware_id = Helper.get_software_id_by_name(rule_category_value_to_check)
             if malware_id:
-                malware_ids_found = Helper.check_argument_list_var(self.required_fields, child_metadata_place_holder,
-                                                                   MITRE_SOFTWAREID_GEN)
+                malware_ids_found = self.required_fields[child_metadata_place_holder] \
+                                        .check_argument_list_var(MITRE_SOFTWAREID_GEN)
                 malware_ids_found.append(malware_id)
 
         return self.required_fields[child_metadata_place_holder].valid
@@ -602,8 +602,9 @@ class Validators:
         MITRE_SOFTWAREID_FOUND = 'mitre_softwareid_found'
         child_metadata_place_holder = self.required_fields[CATEGORY].argument.get(CHILD_PLACE_HOLDER)
 
-        malware_ids_found = Helper.check_argument_list_var(self.required_fields, child_metadata_place_holder, MITRE_SOFTWAREID_GEN)
-        soft_codes_found = Helper.check_argument_list_var(self.required_fields, MITRE_ATT, MITRE_SOFTWAREID_FOUND)
+        malware_ids_found = self.required_fields[child_metadata_place_holder]\
+                                .check_argument_list_var(MITRE_SOFTWAREID_GEN)
+        soft_codes_found = self.required_fields[MITRE_ATT].check_argument_list_var(MITRE_SOFTWAREID_FOUND)
 
         for malware_id_found in malware_ids_found:
             if malware_id_found not in soft_codes_found:
@@ -941,13 +942,3 @@ class Helper:
         else:
             return ''
 
-    @staticmethod
-    def check_argument_list_var(required_fields, metadata, variable_name):
-        if not required_fields[metadata].argument:
-            required_fields[metadata].argument = {variable_name: []}
-        elif not required_fields[metadata].argument.get(variable_name):
-            required_fields[metadata].argument.update({variable_name: []})
-        elif not isinstance(required_fields[metadata].argument.get(variable_name), list):
-            required_fields[metadata].argument.update({variable_name: []})
-
-        return required_fields[metadata].argument.get(variable_name)
