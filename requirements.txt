@@ -1,6 +1,6 @@
 clint>=0.5.1
 packaging>=19.0
-plyara>=2.0.2
+plyara>=2.1.1
 python-baseconv>=1.2.2
 PyYAML>=5.1
 stix2>=1.1.2
