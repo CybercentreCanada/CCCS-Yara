@@ -44,6 +44,8 @@ parser.add_argument('-w', '--warnings', action='store_true', default=False, dest
                     help='This mode will ignore warnings and proceed with other behaviors if the rule is valid.')
 parser.add_argument('-s', '--standard', action='store_true', default=False, dest='standard',
                     help='This prints the YARA standard to the screen.')
+parser.add_argument('-st', '--strict', action='store_true', default=False, dest='strict',
+                    help='This causes the cli to return a non-zero exit code for warnings.')
 
 parser_group = parser.add_mutually_exclusive_group()
 parser_group.add_argument('-i', '--in-place', action='store_true', default=False, dest='inplace',
@@ -280,6 +282,8 @@ def __call_validator(options):
 
     if total_invalid_yara_rule_paths >= 1:
         exit(99)
+    elif total_warning_yara_rule_paths >= 1 and options.strict:
+        exit(49)
 
 
 def git_ci(changed_file_paths):
