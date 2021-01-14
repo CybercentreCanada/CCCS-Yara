@@ -1,6 +1,7 @@
 import plyara.utils
 import collections
 import re
+import yara
 from pathlib import Path
 
 
@@ -49,6 +50,17 @@ class YaraFileProcessor:
                     return
         else:
             self.original_rule_string = rule_file
+
+        # This block attempts to compile the self.original_rule_string. If there are any issues compiling the file it
+        #   creates a yara_rule objects and sets the error state
+
+        try:
+            rules = yara.compile(source=self.original_rule_string)
+        except Exception as e:
+            print('Error Compiling YARA file with yara: ' + str(e))
+            file_response = 'Error Compiling YARA file with yara:\t{!r}'.format(str(e))
+            self.update_file_error(True, str(self.original_rule_file.name), file_response)
+            return
 
         # This block attempts to parse the self.original_rule_string. If there are any issues parsing the file it a
         #   yara_rule object and sets the error state
