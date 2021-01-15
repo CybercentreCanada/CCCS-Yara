@@ -79,7 +79,7 @@ yara_validator_cli.py -h
    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
     
-usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s]
+usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
                              [-i | -c]
                              paths [paths ...]
 
@@ -103,6 +103,8 @@ optional arguments:
   -w, --warnings       This mode will ignore warnings and proceed with other
                        behaviors if the rule is valid.
   -s, --standard       This prints the YARA standard to the screen.
+  -st, --strict        This causes the cli to return a non-zero exit code for
+                       warnings.
   -i, --in-place       Modifies valid files in place, mutually exclusive with
                        -c.
   -c, --create-files   Writes a new file for each valid file, mutually
@@ -192,7 +194,7 @@ yara_validator_cli.py -h
    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
     
-usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s]
+usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
                              [-i | -c]
                              paths [paths ...]
 
@@ -216,6 +218,8 @@ optional arguments:
   -w, --warnings       This mode will ignore warnings and proceed with other
                        behaviors if the rule is valid.
   -s, --standard       This prints the YARA standard to the screen.
+  -st, --strict        This causes the cli to return a non-zero exit code for
+                       warnings.
   -i, --in-place       Modifies valid files in place, mutually exclusive with
                        -c.
   -c, --create-files   Writes a new file for each valid file, mutually
