@@ -4,13 +4,18 @@ import re
 import yara
 from pathlib import Path
 
+SYNTAX_ERRORS_INCLUDES = re.compile(r'.*can\'t open include file')
+SYNTAX_ERRORS_UNDEFINED_MODULES = re.compile(
+    r'.*undefined identifier (?="pe"|"elf"|"cuckoo"|"magic"|"hash"|"math"|"dotnet"|"time")')
+SYNTAX_ERRORS_UNDEFINED = re.compile(r'.*undefined identifier')
 
 class YaraFileProcessor:
     """
     YaraFileProcessor class is used to process a given rule file and parse it into one or more YARA rules
     """
 
-    def __init__(self, rule_file, char_to_replace, char_replacement, count_of_replaced):
+    def __init__(self, rule_file, char_to_replace, char_replacement, count_of_replaced,
+                 check_import_modules=True, check_rule_dependancies=False):
         # Original rule file
         self.original_rule_file = rule_file
         # Variables for the white space standardization
@@ -53,11 +58,31 @@ class YaraFileProcessor:
 
         # This block attempts to compile the self.original_rule_string. If there are any issues compiling the file it
         #   creates a yara_rule objects and sets the error state
-
         try:
             rules = yara.compile(source=self.original_rule_string)
+        except yara.SyntaxError as e:
+            file_response = None
+            error_string = str(e)
+            if SYNTAX_ERRORS_INCLUDES.match(error_string):
+                pass
+            elif SYNTAX_ERRORS_UNDEFINED_MODULES.match(error_string):
+                if check_import_modules:
+                    # print('Error Compiling YARA file with yara: ' + str(e))
+                    file_response = 'Error Compiling YARA file with yara:\t{!r}'.format(str(e))
+            elif SYNTAX_ERRORS_UNDEFINED.match(error_string):
+                if check_rule_dependancies:
+                    # print('Error Compiling YARA file with yara: ' + str(e))
+                    file_response = 'Error Compiling YARA file with yara:\t{!r}'.format(str(e))
+            else:
+                # print('Error Compiling YARA file with yara: ' + str(e))
+                file_response = 'Error Compiling YARA file with yara:\t{!r}'.format(str(e))
+
+            if file_response:
+                self.update_file_error(True, str(self.original_rule_file.name), file_response)
+                return
+
         except Exception as e:
-            print('Error Compiling YARA file with yara: ' + str(e))
+            # print('Error Compiling YARA file with yara: ' + str(e))
             file_response = 'Error Compiling YARA file with yara:\t{!r}'.format(str(e))
             self.update_file_error(True, str(self.original_rule_file.name), file_response)
             return
@@ -67,12 +92,12 @@ class YaraFileProcessor:
         try:
             self.plyara_rule = parser.parse_string(self.original_rule_string)
         except plyara.exceptions.ParseTypeError as e:
-            print('Error reported by plyara library: plyara.exceptions.ParseTypeError: ' + str(e))
+            # print('Error reported by plyara library: plyara.exceptions.ParseTypeError: ' + str(e))
             file_response = 'Error reported by plyara library: plyara.exceptions.ParseTypeError:\t{!r}'.format(str(e))
             self.update_file_error(True, str(self.original_rule_file.name), file_response)
             return
         except Exception as e:
-            print('Error Parsing YARA file with plyara: ' + str(e))
+            # print('Error Parsing YARA file with plyara: ' + str(e))
             file_response = 'Error Parsing YARA file with plyara:\t{!r}'.format(str(e))
             self.update_file_error(True, str(self.original_rule_file.name), file_response)
             return
