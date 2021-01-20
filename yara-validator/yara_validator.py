@@ -92,13 +92,14 @@ def check_validator_cfg(validator_cfg):
         exit(1)
 
 
-def run_yara_validator(yara_file, generate_values=True):
+def run_yara_validator(yara_file, generate_values=True, check_import_modules=True):
     """
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string
         representation of the yara file to YaraValidator.valadation
     :param yara_file: The file variable passed in. Usually a string or Path variable
     :param generate_values: determine if the values the validator can generate should be generated or not, default True
+    :param check_import_modules: determines if the check for modules that have not been imported is run, default True
     :return:
     """
     with open(VALIDATOR_CFG, 'r', encoding='utf8') as config_file:
@@ -108,7 +109,8 @@ def run_yara_validator(yara_file, generate_values=True):
     char_to_replace = validator_configuration.get(WHITE_SPACE_REPLACEMENT).get(VALUE).get(CHAR_TO_REPLACE)
     char_replacement = validator_configuration.get(WHITE_SPACE_REPLACEMENT).get(VALUE).get(CHAR_REPLACEMENT)
     count_of_replaced = validator_configuration.get(WHITE_SPACE_REPLACEMENT).get(VALUE).get(COUNT_OF_REPLACED)
-    yara_file_processor = YaraFileProcessor(yara_file, char_to_replace, char_replacement, count_of_replaced)
+    yara_file_processor = YaraFileProcessor(yara_file, char_to_replace, char_replacement, count_of_replaced,
+                                            check_import_modules)
 
     # If there are any issues with the yara file read process exit out and return the error
     if yara_file_processor.return_file_error_state():

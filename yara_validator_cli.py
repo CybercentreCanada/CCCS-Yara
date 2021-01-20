@@ -46,6 +46,8 @@ parser.add_argument('-s', '--standard', action='store_true', default=False, dest
                     help='This prints the YARA standard to the screen.')
 parser.add_argument('-st', '--strict', action='store_true', default=False, dest='strict',
                     help='This causes the cli to return a non-zero exit code for warnings.')
+parser.add_argument('-m', '--module', action='store_false', default=True,
+                    dest='module', help='This flag overrides the check for modules that have not been imported.')
 
 parser_group = parser.add_mutually_exclusive_group()
 parser_group.add_argument('-i', '--in-place', action='store_true', default=False, dest='inplace',
@@ -193,7 +195,7 @@ def __call_validator(options):
             what_will_be_done = 'make no changes'
             yara_file_output = None
 
-        yara_file_processor = run_yara_validator(yara_rule_path, generate_values)
+        yara_file_processor = run_yara_validator(yara_rule_path, generate_values, options.module)
 
 
         # Prints the output of the validator.

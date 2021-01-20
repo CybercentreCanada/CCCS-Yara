@@ -80,7 +80,7 @@ yara_validator_cli.py -h
     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
     
 usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
-                             [-i | -c]
+                             [-m] [-i | -c]
                              paths [paths ...]
 
 CCCS YARA script to run the CCCS YARA validator, use the -i or -c flags to
@@ -105,6 +105,8 @@ optional arguments:
   -s, --standard       This prints the YARA standard to the screen.
   -st, --strict        This causes the cli to return a non-zero exit code for
                        warnings.
+  -m, --module         This flag overrides the check for modules that have not
+                       been imported.
   -i, --in-place       Modifies valid files in place, mutually exclusive with
                        -c.
   -c, --create-files   Writes a new file for each valid file, mutually
@@ -195,7 +197,7 @@ yara_validator_cli.py -h
     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
     
 usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
-                             [-i | -c]
+                             [-m] [-i | -c]
                              paths [paths ...]
 
 CCCS YARA script to run the CCCS YARA validator, use the -i or -c flags to
@@ -220,6 +222,8 @@ optional arguments:
   -s, --standard       This prints the YARA standard to the screen.
   -st, --strict        This causes the cli to return a non-zero exit code for
                        warnings.
+  -m, --module         This flag overrides the check for modules that have not
+                       been imported.
   -i, --in-place       Modifies valid files in place, mutually exclusive with
                        -c.
   -c, --create-files   Writes a new file for each valid file, mutually
