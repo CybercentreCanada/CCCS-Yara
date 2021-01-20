@@ -99,7 +99,7 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
         representation of the yara file to YaraValidator.valadation
     :param yara_file: The file variable passed in. Usually a string or Path variable
     :param generate_values: determine if the values the validator can generate should be generated or not, default True
-    :param check_import_modules: determines if there is a check that modules are imported in the rule, default True
+    :param check_import_modules: determines if the check for modules that have not been imported is run, default True
     :return:
     """
     with open(VALIDATOR_CFG, 'r', encoding='utf8') as config_file:

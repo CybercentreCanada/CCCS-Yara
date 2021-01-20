@@ -47,8 +47,7 @@ parser.add_argument('-s', '--standard', action='store_true', default=False, dest
 parser.add_argument('-st', '--strict', action='store_true', default=False, dest='strict',
                     help='This causes the cli to return a non-zero exit code for warnings.')
 parser.add_argument('-m', '--module', action='store_false', default=True,
-                    dest='module', help='This flag disables the check that used modules in the rule file have been '
-                                        'imported in the rule file.')
+                    dest='module', help='This flag overrides the check for modules that have not been imported.')
 
 parser_group = parser.add_mutually_exclusive_group()
 parser_group.add_argument('-i', '--in-place', action='store_true', default=False, dest='inplace',

@@ -105,8 +105,8 @@ optional arguments:
   -s, --standard       This prints the YARA standard to the screen.
   -st, --strict        This causes the cli to return a non-zero exit code for
                        warnings.
-  -m, --module         This flag disables the check that used modules in the
-                       rule file have been imported in the rule file.
+  -m, --module         This flag overrides the check for modules that have not
+                       been imported.
   -i, --in-place       Modifies valid files in place, mutually exclusive with
                        -c.
   -c, --create-files   Writes a new file for each valid file, mutually
@@ -222,8 +222,8 @@ optional arguments:
   -s, --standard       This prints the YARA standard to the screen.
   -st, --strict        This causes the cli to return a non-zero exit code for
                        warnings.
-  -m, --module         This flag disables the check that used modules in the
-                       rule file have been imported in the rule file.
+  -m, --module         This flag overrides the check for modules that have not
+                       been imported.
   -i, --in-place       Modifies valid files in place, mutually exclusive with
                        -c.
   -c, --create-files   Writes a new file for each valid file, mutually
