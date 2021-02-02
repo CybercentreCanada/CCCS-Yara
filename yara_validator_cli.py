@@ -16,7 +16,7 @@ if YARA_VALIDATOR_PATH not in sys.path:
 from yara_validator import run_yara_validator
 
 STANDARD_YAML_PATH = Path(__file__).resolve().parent / Path('CCCS_YARA.yml')
-YARA_FILENAME_REGEX = r'(\.yara|\.yar)$'
+YARA_FILENAME_REGEX = r'(\.yara|\.yar|\.rules)$'
 YARA_VALID_PREFIX = r'valid_'
 YARA_VALID_PREFIX_REG = re.compile(r'^' + YARA_VALID_PREFIX)
 OUTPUT_FILE_LIST = []
