@@ -37,24 +37,31 @@ class YaraFileProcessor:
 
         # Plyara object for parsing the yara rule file
         parser = plyara.Plyara()
+        file_name = ''
         # This block attempts to read the file as utf-8. If there are any issues with the file format or reading
         #   the file it creates a yara_rule object and sets the error state
         if isinstance(rule_file, str) or isinstance(rule_file, Path):
+            if isinstance(rule_file, str):
+                file_as_path = Path(self.original_rule_file)
+            else:
+                file_as_path = self.original_rule_file
+            file_name = file_as_path.name
             with open(rule_file, encoding='utf-8') as yf:
                 try:
                     self.original_rule_string = yf.read()
                 except UnicodeDecodeError as e:
                     print('UnicodeDecodeError: ' + str(e))
                     file_response = 'UnicodeDecodeError:\t{!r}'.format(str(e))
-                    self.update_file_error(True, str(self.original_rule_file.name), file_response)
+                    self.update_file_error(True, str(file_name), file_response)
                     return
                 except Exception as e:
                     print('There was an error opening the file: ' + str(e))
                     file_response = 'There was an error opening the file:\t{!r}'.format(str(e))
-                    self.update_file_error(True, str(self.original_rule_file.name), file_response)
+                    self.update_file_error(True, str(file_name), file_response)
                     return
         else:
             self.original_rule_string = rule_file
+            file_name = 'File_Contents'
 
         # This block attempts to compile the self.original_rule_string. If there are any issues compiling the file it
         #   creates a yara_rule objects and sets the error state
@@ -78,13 +85,13 @@ class YaraFileProcessor:
                 file_response = 'Error Compiling YARA file with yara:\t{!r}'.format(str(e))
 
             if file_response:
-                self.update_file_error(True, str(self.original_rule_file.name), file_response)
+                self.update_file_error(True, str(file_name), file_response)
                 return
 
         except Exception as e:
             # print('Error Compiling YARA file with yara: ' + str(e))
             file_response = 'Error Compiling YARA file with yara:\t{!r}'.format(str(e))
-            self.update_file_error(True, str(self.original_rule_file.name), file_response)
+            self.update_file_error(True, str(file_name), file_response)
             return
 
         # This block attempts to parse the self.original_rule_string. If there are any issues parsing the file it a
@@ -94,12 +101,12 @@ class YaraFileProcessor:
         except plyara.exceptions.ParseTypeError as e:
             # print('Error reported by plyara library: plyara.exceptions.ParseTypeError: ' + str(e))
             file_response = 'Error reported by plyara library: plyara.exceptions.ParseTypeError:\t{!r}'.format(str(e))
-            self.update_file_error(True, str(self.original_rule_file.name), file_response)
+            self.update_file_error(True, str(file_name), file_response)
             return
         except Exception as e:
             # print('Error Parsing YARA file with plyara: ' + str(e))
             file_response = 'Error Parsing YARA file with plyara:\t{!r}'.format(str(e))
-            self.update_file_error(True, str(self.original_rule_file.name), file_response)
+            self.update_file_error(True, str(file_name), file_response)
             return
 
         # The number of rules found in the file
