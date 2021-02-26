@@ -149,6 +149,8 @@ class YaraFileProcessor:
                 non_white_space_index = index
                 break
 
+        if non_white_space_index == 0:
+            non_white_space_index = len(line_as_list)
         new_list = new_list + line_as_list[non_white_space_index:]
 
         newline = ''.join(new_list)
