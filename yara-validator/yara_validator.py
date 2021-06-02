@@ -1,5 +1,6 @@
 import collections
 import re
+import os
 from pathlib import Path
 
 import plyara
@@ -15,8 +16,10 @@ from yara_file_processor import YaraFileProcessor, YaraRule
 SCRIPT_LOCATION = Path(__file__).resolve().parent
 VALIDATOR_CFG = SCRIPT_LOCATION / 'validator_cfg.yml'
 MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
-CONFIG_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_YARA.yml'
-CONFIG_VALUES_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_YARA_values.yml'
+
+# Allow use of custom CCCS_YARA*.yml
+CONFIG_YAML_PATH = os.environ.get('CONFIG_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA.yml')
+CONFIG_VALUES_YAML_PATH = os.environ.get('CONFIG_VALUES_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA_values.yml')
 
 # constants to deal with various required string comparisons
 SCOPES = 'scopes'
