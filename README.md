@@ -2,7 +2,7 @@
 
 ## CCCS YARA Specification
 
-The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml) has been created to define and validate the style and format of YARA rule metadata. 
+The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml) has been created to define and validate the style and format of YARA rule metadata. It comes with a cli which allow you to validate and generate metadata automatically.
 
 Over the years we have seen many YARA rules; in order to leverage them to their full potential we always had to modify some of their associated metadata, even for rules we developed ourselves. Adjusting simple elements such as datetime format and adding important information to help analysts.
 
@@ -119,7 +119,7 @@ optional arguments:
 
 ## Spécification YARA du CCCS
 
-La [Spécification YARA du CCCS](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml) a été créé pour définir et validé le style et le format des attributs pour les règles YARA. 
+La [Spécification YARA du CCCS](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml) a été créé pour définir et validé le style et le format des attributs pour les règles YARA. Un outil ligne de commandes permet de valider et généré les tags automatiquement!
 
 Au fil des années nous avons vu beaucoup de régles YARA; mais pour pouvoir les utilisées à leur plein potentiel nous devions modifiée les méta données associtiées, parfois même pour nos propres règles. En ajustant des éléments aussi simples que le format de date et en ajoutant des attributs important pour les analystes.
 
