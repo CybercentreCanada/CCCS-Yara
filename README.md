@@ -67,6 +67,8 @@ All required python packages are in the requirements.txt
 The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository:
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
+cd CCCS-Yara
+pip install .\requirements.txt
  ```
  
 ## yara_validator_cli.py usage
@@ -184,6 +186,8 @@ Tous les libraries python sont dans le fichier requirements.txt
 [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) est un sous module de ce répertoire:
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
+cd CCCS-Yara
+pip install .\requirements.txt
  ```
  
 ## yara_validator_cli.py en ligne de commandes
