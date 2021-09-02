@@ -22,8 +22,6 @@ rule insert_name {
 		hash = ""
 		hash = ""
 		vol_script = ""
-		al_configdumper = ""
-		al_configparser = ""
 	
 	strings:
 		
