@@ -2,7 +2,7 @@
 
 ## CCCS YARA Specification
 
-The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml) has been created to define and validate the style and format of YARA rule metadata. It comes with a cli which allow you to validate and generate metadata automatically.
+The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml) has been created to define and validate the style and format of YARA rule metadata. It comes with a cli which allow you to validate and generate metadata automatically (such as unique id, rule fingerprint, actor enrichment from ATT&CK).
 
 Over the years we have seen many YARA rules; in order to leverage them to their full potential we always had to modify some of their associated metadata, even for rules we developed ourselves. Adjusting simple elements such as datetime format and adding important information to help analysts.
 
