@@ -117,7 +117,12 @@ optional arguments:
                        exclusive with -i.
   ```
 
+Quick example:
 
+```
+# Rule will be converted inline
+python yara_validator_cli.py -v -i <path>
+```
 
 # Centre canadien pour la cybersécurité
 
