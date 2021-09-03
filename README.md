@@ -6,6 +6,8 @@ The [CCCS YARA Specification](https://github.com/CybercentreCanada/CCCS-Yara/blo
 
 Over the years we have seen many YARA rules; in order to leverage them to their full potential we always had to modify some of their associated metadata, even for rules we developed ourselves. Adjusting simple elements such as datetime format and adding important information to help analysts.
 
+You can leverage it in your CI/CD pipeplines to automatically verify and enrich your Yara rules before new rules are merged in!
+
 This specification also include fields specific to the [MITRE ATT&CK framework](https://attack.mitre.org/matrices/enterprise/) to identify techniques and universal [MITRE ATT&CK threat groups](https://attack.mitre.org/groups/).
 
 [AssemblyLine](https://www.cyber.gc.ca/en/assemblyline) supports this specification natively and will leverage it to provide more context around YARA signature hits.
