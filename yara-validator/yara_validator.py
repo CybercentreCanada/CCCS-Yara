@@ -33,6 +33,8 @@ ACTOR = 'actor'
 AUTHOR = 'author'
 CATEGORY = 'category'
 CATEGORY_TYPE = 'info|exploit|technique|tool|malware'
+SOURCE = 'source'
+REFERENCE = 'reference'
 MITRE_ATT = 'mitre_att'
 CHILD_PLACE_HOLDER = 'child_place_holder'
 MITRE_SOFTWAREID_GEN = 'mitre_softwareid_gen'
@@ -42,6 +44,7 @@ WHITE_SPACE_REPLACEMENT = 'white_space_replacement'
 CHAR_TO_REPLACE = 'char_to_replace'
 CHAR_REPLACEMENT = 'char_replacement'
 COUNT_OF_REPLACED = 'count_of_replaced'
+
 
 def check_validator_cfg(validator_cfg):
     """
@@ -74,7 +77,7 @@ def check_validator_cfg(validator_cfg):
             white_space_replacement_values[CHAR_TO_REPLACE] = char_to_replace
 
         char_replacement = white_space_replacement_values.get(CHAR_REPLACEMENT)\
-                                                            .encode('utf-8').decode('unicode_escape')
+            .encode('utf-8').decode('unicode_escape')
         if char_replacement is None or not re.fullmatch('\s', char_replacement):
             print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
                                                                       CHAR_REPLACEMENT,
@@ -266,8 +269,8 @@ class YaraValidatorReturn:
         yara_new_file = []
         if yara_valid_meta_start != 0 and yara_valid_meta_end != 0 and yara_cccs_meta_start != 0 and yara_cccs_meta_end != 0:
             yara_new_file = yara_valid_lines[0:yara_valid_meta_start] + yara_cccs_lines[
-                                                                        yara_cccs_meta_start:yara_cccs_meta_end] + yara_valid_lines[
-                                                                                                                   yara_valid_meta_end:]
+                yara_cccs_meta_start:yara_cccs_meta_end] + yara_valid_lines[
+                yara_valid_meta_end:]
             yara_new_file = '\n'.join(yara_new_file)
 
         if self.rule_to_validate != yara_new_file:
@@ -388,6 +391,7 @@ class YaraValidator:
             self.warning_author_no_hash_check,
             self.warning_actor_no_mitre_group,
             self.warning_no_category_type,
+            self.warning_no_reference_specified,
             self.warning_common_metadata_errors
         ]
 
@@ -611,6 +615,14 @@ class YaraValidator:
                                           'information i.e. malware: "name of the malware".'.format(value)
                         valid.update_warning(True, CATEGORY_TYPE, warning_message)
 
+    def warning_no_reference_specified(self, rule_to_check, valid):
+        if self.required_fields.get(
+                SOURCE, None) and self.required_fields[SOURCE].found and not self.required_fields[REFERENCE].found:
+            metadata_values = rule_to_check[METADATA]
+            for metadata in metadata_values:
+                if SOURCE in metadata.keys() and REFERENCE not in metadata.keys():
+                    valid.update_warning(True, REFERENCE, 'Source was given without a reference.')
+
     def warning_common_metadata_errors(self, rule_to_check, valid):
         metadata_values = rule_to_check[METADATA]
         for value in metadata_values:
@@ -619,7 +631,7 @@ class YaraValidator:
                 value = list(value.values())[0]
                 if re.fullmatch(self.metadata_keys_regex, key) and not re.fullmatch(self.metadata_keys_filter, key):
                     warning_message = 'Key: {!r} has a similar name to a key in the standard but was not validated' \
-                                        'because it did not match the standard.'.format(key)
+                        'because it did not match the standard.'.format(key)
                     valid.update_warning(True, key, warning_message)
 
     def generate_required_optional_metadata(self, rule_to_validate):
@@ -846,14 +858,13 @@ class YaraValidator:
             cfg_params = item[1]  # {parameter : value}
             if cfg_metadata == 'info|exploit|technique|tool|malware':
                 self.metadata_keys_regex = self.metadata_keys_regex\
-                                           + '^info.+|^exploit.+|^technique.+|^tool.+|^malware.+|'
+                    + '^info.+|^exploit.+|^technique.+|^tool.+|^malware.+|'
             else:
                 self.metadata_keys_regex = self.metadata_keys_regex + '^' + cfg_metadata + '.+|'
             self.required_fields[cfg_metadata] = self.read_yara_cfg(cfg_metadata, cfg_params,
                                                                     index)  # add a new MetadataAttributes instance
-            self.handle_child_parent_metadata(cfg_metadata, cfg_params,
-                                              metadata_in_child_parent_relationship)  # replace the name of child metadata with its place holder
-        self.validate_child_parent_metadata(self.yara_config,
-                                            metadata_in_child_parent_relationship)  # check if any metadata in child-parent relationship are missing
+            # replace the name of child metadata with its place holder
+            self.handle_child_parent_metadata(cfg_metadata, cfg_params, metadata_in_child_parent_relationship)
+        # check if any metadata in child-parent relationship are missing
+        self.validate_child_parent_metadata(self.yara_config, metadata_in_child_parent_relationship)
         self.metadata_keys_regex = self.metadata_keys_regex[:-1]
-

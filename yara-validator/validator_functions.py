@@ -327,8 +327,6 @@ class Validators:
         :return: True if the value matches the UNIVERSAL_REGEX and False if it does not match it
         """
         SOURCE = metadata_key
-        REFERENCE = self.required_fields[SOURCE].argument.get('required')
-        IFVALUE_REGEX = r'' + self.required_fields[SOURCE].argument.get('ifvalue')
         self.required_fields[SOURCE].attributefound()
         self.required_fields_index[self.required_fields[SOURCE].position].increment_count()
 
@@ -342,10 +340,6 @@ class Validators:
             self.required_fields[SOURCE].attributevalid()
         else:
             self.required_fields[SOURCE].attributeinvalid()
-
-        if re.fullmatch(IFVALUE_REGEX, source_to_check):
-            # Because the source is OPENSOURCE a reference is required
-            self.required_fields[REFERENCE].optional = MetadataOpt.REQ_PROVIDED
 
         return self.required_fields[SOURCE].valid
 
@@ -941,4 +935,3 @@ class Helper:
             return tool_return[0]['external_references'][0]['external_id']
         else:
             return ''
-
