@@ -174,6 +174,7 @@ rule MemoryModule {
 
 ## Répertoires de règles YARA qui utilise ce standard - merci!
 - https://github.com/reversinglabs/reversinglabs-yara-rules
+- https://github.com/bartblaze/Yara-rules
 
 ## Composantes
 
