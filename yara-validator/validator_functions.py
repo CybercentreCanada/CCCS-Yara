@@ -210,7 +210,7 @@ class Validators:
         if Helper.valid_metadata_index(rule_to_version_check, metadata_index):
             if list(rule_to_version_check[METADATA][metadata_index].keys())[0] == VERSION:
                 if isinstance(packaging.version.parse(list(rule_to_version_check[METADATA][metadata_index].values())[0]),
-                              packaging.version.Version):
+                        packaging.version.Version):
                     self.required_fields[VERSION].attributevalid()
                 else:
                     self.required_fields[VERSION].attributeinvalid()
@@ -302,7 +302,6 @@ class Validators:
         current_date = Helper.current_valid_date()
         if Helper.valid_metadata_index(rule_to_date_check, metadata_index):
             if list(rule_to_date_check[METADATA][metadata_index].keys())[0] == LAST_MODIFIED:
-                rule_to_date_check[METADATA][metadata_index][LAST_MODIFIED] = current_date
                 if Helper.validate_date(list(rule_to_date_check[METADATA][metadata_index].values())[0]):
                     self.required_fields[LAST_MODIFIED].attributevalid()
                 else:
