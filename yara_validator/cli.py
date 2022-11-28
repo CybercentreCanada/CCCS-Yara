@@ -2,18 +2,13 @@
 
 import argparse
 import re
-import sys
+import yaml
+
+from clint.textui import colored, puts
 from pathlib import Path
 from textwrap import dedent
+from yara_validator.validator import run_yara_validator
 
-import yaml
-from clint.textui import colored, puts
-
-YARA_VALIDATOR_PATH = Path(__file__).resolve().parent / Path('yara-validator')
-if YARA_VALIDATOR_PATH not in sys.path:
-    sys.path.append(str(YARA_VALIDATOR_PATH))
-
-from yara_validator import run_yara_validator
 
 STANDARD_YAML_PATH = Path(__file__).resolve().parent / Path('CCCS_YARA.yml')
 YARA_FILENAME_REGEX = r'(\.yara|\.yar|\.rules)$'
@@ -98,7 +93,7 @@ def get_paths_to_validate(options_paths, recursive):
 
 
 def get_yara_file_new_path(path):
-    """ takes a path in argument, and return the same path with the 
+    """ takes a path in argument, and return the same path with the
         filename prefixed with YARA_VALID_PREFIX.
 
         if the file already has the prefix, returns the path unchanged.
@@ -197,7 +192,6 @@ def __call_validator(options):
 
         yara_file_processor = run_yara_validator(yara_rule_path, generate_values, options.module)
 
-
         # Prints the output of the validator.
         file_message = '{message:39}{y_file}'
         if yara_file_processor.return_file_error_state():
@@ -273,9 +267,9 @@ def __call_validator(options):
     ----------------------------------------------------------------------------
     All .yara Rule files found have been passed through the CCCS Yara Validator:
         Total Yara Rule Files to Analyze:     {total_yara_rule_paths}
-        Total Valid CCCS Yara Rule Files:     {total_valid_yara_rule_paths} 
+        Total Valid CCCS Yara Rule Files:     {total_valid_yara_rule_paths}
         Total Warning CCCS Yara Rule Files:   {total_warning_yara_rule_paths}
-        Total Invalid CCCS Yara Rule Files:   {total_invalid_yara_rule_paths} 
+        Total Invalid CCCS Yara Rule Files:   {total_invalid_yara_rule_paths}
     ---------------------------------------------------------------------------
     ''').format(total_yara_rule_paths=str(total_yara_rule_paths),
                 total_valid_yara_rule_paths=colored.green(str(total_valid_yara_rule_paths)),
@@ -295,11 +289,11 @@ def git_ci(changed_file_paths):
 
 def main():
     print('''\
-      ____ ____ ____ ____   __   __ _    ____      _    
-     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \   
-    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \  
-    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
-     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
+      ____ ____ ____ ____   __   __ _    ____      _
+     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
+    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
+    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
+     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
      ''')
 
     options = parse_args()

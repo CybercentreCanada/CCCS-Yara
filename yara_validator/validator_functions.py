@@ -11,7 +11,7 @@ import stix2.exceptions
 from stix2 import FileSystemSource
 from stix2 import Filter
 
-from stix2_patch.filter_casefold import FilterCasefold
+from yara_validator.stix2_patch.filter_casefold import FilterCasefold
 
 METADATA = 'metadata'
 BASE62_REGEX = r'^[0-9a-zA-z]+$'
@@ -20,6 +20,8 @@ MITRE_GROUP_NAME = 'name'
 CHILD_PLACE_HOLDER = 'child_place_holder'
 
 # potential values of MetadataAttributes.optional variable
+
+
 class MetadataOpt(Enum):
     REQ_PROVIDED = 'req_provided'
     REQ_OPTIONAL = 'req_optional'
@@ -209,7 +211,8 @@ class Validators:
         rule_version = {VERSION: '1.0'}
         if Helper.valid_metadata_index(rule_to_version_check, metadata_index):
             if list(rule_to_version_check[METADATA][metadata_index].keys())[0] == VERSION:
-                if isinstance(packaging.version.parse(list(rule_to_version_check[METADATA][metadata_index].values())[0]),
+                if isinstance(packaging.version.parse(
+                        list(rule_to_version_check[METADATA][metadata_index].values())[0]),
                         packaging.version.Version):
                     self.required_fields[VERSION].attributevalid()
                 else:
@@ -609,10 +612,16 @@ class Validators:
 
 
 class Helper:
+    import os
     SCRIPT_LOCATION = Path(__file__).resolve().parent
     MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
-    VALIDATOR_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_YARA_values.yml'
-    CONFIGURATION_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_YARA.yml'
+    if not os.path.exists(MITRE_STIX_DATA_PATH):
+        from git import Repo
+        print(f'Unable to find STIX data on {MITRE_STIX_DATA_PATH}. Cloning..')
+
+        os.makedirs(MITRE_STIX_DATA_PATH)
+        repo = Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH)
+        repo.git.checkout('0b926abd8adf266ed25f0f8ba4ae98d669511573')
 
     fs = FileSystemSource(MITRE_STIX_DATA_PATH)
 

@@ -5,21 +5,21 @@ from pathlib import Path
 
 import plyara
 import yaml
-from plyara.utils import rebuild_yara_rule
 # for querying the MITRE ATT&CK data
 from stix2 import FileSystemSource
 
-from validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
-from yara_file_processor import YaraFileProcessor, YaraRule
+from yara_validator.validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
+from yara_validator.yara_file_processor import YaraFileProcessor
 
 # set current working directory
 SCRIPT_LOCATION = Path(__file__).resolve().parent
 VALIDATOR_CFG = SCRIPT_LOCATION / 'validator_cfg.yml'
-MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
 
-# Allow use of custom CCCS_YARA*.yml
+# Allow use of custom paths/configurations besides the defaults
 CONFIG_YAML_PATH = os.environ.get('CONFIG_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA.yml')
 CONFIG_VALUES_YAML_PATH = os.environ.get('CONFIG_VALUES_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA_values.yml')
+MITRE_STIX_DATA_PATH = os.environ.get('MITRE_STIX_DATA_PATH', SCRIPT_LOCATION.parent / 'cti/enterprise-attack')
+
 
 # constants to deal with various required string comparisons
 SCOPES = 'scopes'
