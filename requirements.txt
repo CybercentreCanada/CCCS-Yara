@@ -1,4 +1,5 @@
 clint>=0.5.1
+GitPython>=3.1.0
 packaging>=19.0
 plyara>=2.1.1
 python-baseconv>=1.2.2
