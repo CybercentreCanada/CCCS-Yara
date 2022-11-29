@@ -621,7 +621,7 @@ class Helper:
 
         os.makedirs(MITRE_STIX_DATA_PATH)
         repo = Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH)
-        repo.git.checkout('0b926abd8adf266ed25f0f8ba4ae98d669511573')
+        repo.git.checkout('4cbf8cc4bdf2121ee987a23bfe5aac4fe4d2f5b1')  # ATT&CK v12.1
 
     fs = FileSystemSource(MITRE_STIX_DATA_PATH)
 
