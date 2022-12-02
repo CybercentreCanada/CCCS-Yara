@@ -733,9 +733,8 @@ class YaraValidator:
         :param regex_metadata: name of the metadata in the file that contains multiple regex expressions
         :return: single line of regex expression
         """
-        regex_yaml_path = SCRIPT_LOCATION.parent / file_name
-        if file_name == "CCCS_YARA_values.yml" and not os.path.exists(regex_yaml_path):
-            regex_yaml_path = os.environ.get('CONFIG_VALUES_YAML_PATH', SCRIPT_LOCATION.parent / file_name)
+        regex_yaml_path = CONFIG_VALUES_YAML_PATH if "CCCS_YARA_values.yml" in file_name else \
+            SCRIPT_LOCATION.parent / file_name
         with open(regex_yaml_path, 'r', encoding='utf8') as yaml_file:
             scheme = yaml.safe_load(yaml_file)
 
