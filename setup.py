@@ -17,5 +17,7 @@ s = setup(
     entry_points="""
     [console_scripts]
     yara_validator=yara_validator.cli:main
-    """
+    """,
+    package_data={'yara_validator': ['validator_cfg.yml']},
+    include_package_data=True,
 )
