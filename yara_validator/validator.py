@@ -734,6 +734,8 @@ class YaraValidator:
         :return: single line of regex expression
         """
         regex_yaml_path = SCRIPT_LOCATION.parent / file_name
+        if file_name == "CCCS_YARA_values.yml" and not os.path.exists(regex_yaml_path):
+            regex_yaml_path = os.environ.get('CONFIG_VALUES_YAML_PATH', SCRIPT_LOCATION.parent / file_name)
         with open(regex_yaml_path, 'r', encoding='utf8') as yaml_file:
             scheme = yaml.safe_load(yaml_file)
 
