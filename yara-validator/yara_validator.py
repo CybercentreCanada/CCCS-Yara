@@ -130,8 +130,12 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
         return yara_file_processor
 
     for rule in yara_file_processor.yara_rules:
-        validator = YaraValidator(MITRE_STIX_DATA_PATH, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH)
-        rule.add_rule_return(validator.validation(rule.rule_plyara, rule.rule_string, generate_values))
+        try:
+            validator = YaraValidator(MITRE_STIX_DATA_PATH, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH)
+            rule.add_rule_return(validator.validation(rule.rule_plyara, rule.rule_string, generate_values))
+        except Exception as e:
+            raise Exception(
+                f"{rule.rule_plyara.get('rule_name', None)} produced the following exception: {str(e)}. Halting validation..")
 
     return yara_file_processor
 
