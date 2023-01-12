@@ -516,7 +516,16 @@ class YaraValidator:
                 key_to_match = list(metadata_to_check.keys())[0]
                 metadata_index = list(metadata_to_check.values())[0]
 
-                metadata = rule_to_validate[METADATA][metadata_index]
+                try:
+                    metadata = rule_to_validate[METADATA][metadata_index]
+                except IndexError:
+                    for i, meta in enumerate(rule_to_validate[METADATA]):
+                        metadata = meta.get(key_to_match)
+                        if metadata is not None:
+                            metadata = meta
+                            metadata_index = i
+                            break
+
                 if len(metadata.keys()) == 1:
                     key = list(metadata.keys())[0]
                     value = list(metadata.values())[0]
