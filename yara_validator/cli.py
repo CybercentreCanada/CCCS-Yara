@@ -43,6 +43,12 @@ parser.add_argument('-st', '--strict', action='store_true', default=False, dest=
                     help='This causes the cli to return a non-zero exit code for warnings.')
 parser.add_argument('-m', '--module', action='store_false', default=True,
                     dest='module', help='This flag overrides the check for modules that have not been imported.')
+parser.add_argument('--validator_config', type=str, default=None, dest='validator_config',
+                    help='Path to YARA configuration ie. CCCS_YARA.yml')
+parser.add_argument('--yara_config', type=str, default=None, dest='yara_config',
+                    help='Path to YARA configuration ie. CCCS_YARA.yml')
+parser.add_argument('--yara_config_values', type=str, default=None, dest='yara_configvalues',
+                    help='Path to YARA configuration values ie. CCCS_YARA_values.yml')
 
 parser_group = parser.add_mutually_exclusive_group()
 parser_group.add_argument('-i', '--in-place', action='store_true', default=False, dest='inplace',
@@ -190,7 +196,8 @@ def __call_validator(options):
             what_will_be_done = 'make no changes'
             yara_file_output = None
 
-        yara_file_processor = run_yara_validator(yara_rule_path, generate_values, options.module)
+        yara_file_processor = run_yara_validator(yara_rule_path, generate_values, options.module,
+                                                 options.yara_config, options.yara_configvalues, options.validator_config)
 
         # Prints the output of the validator.
         file_message = '{message:39}{y_file}'

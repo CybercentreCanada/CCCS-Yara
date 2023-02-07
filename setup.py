@@ -18,6 +18,6 @@ s = setup(
     [console_scripts]
     yara_validator=yara_validator.cli:main
     """,
-    package_data={'yara_validator': ['validator_cfg.yml']},
+    package_data={'cccs_yara_validator': ['*.yml']},
     include_package_data=True,
 )

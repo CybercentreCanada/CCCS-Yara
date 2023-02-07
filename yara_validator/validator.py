@@ -98,7 +98,8 @@ def check_validator_cfg(validator_cfg):
         exit(1)
 
 
-def run_yara_validator(yara_file, generate_values=True, check_import_modules=True):
+def run_yara_validator(yara_file, generate_values=True, check_import_modules=True, config_path=None,
+                       config_values_path=None, validator_config_path=None):
     """
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string
@@ -108,6 +109,18 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
     :param check_import_modules: determines if the check for modules that have not been imported is run, default True
     :return:
     """
+    if config_path:
+        global CONFIG_YAML_PATH
+        CONFIG_YAML_PATH = config_path
+
+    if config_values_path:
+        global CONFIG_VALUES_YAML_PATH
+        CONFIG_VALUES_YAML_PATH = config_values_path
+
+    if validator_config_path:
+        global VALIDATOR_CFG
+        CONFIG_VALUES_YAML_PATH = validator_config_path
+
     with open(VALIDATOR_CFG, 'r', encoding='utf8') as config_file:
         validator_configuration = yaml.safe_load(config_file)
 
@@ -131,7 +144,8 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
 
     for rule in yara_file_processor.yara_rules:
         try:
-            validator = YaraValidator(MITRE_STIX_DATA_PATH, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH)
+            validator = YaraValidator(MITRE_STIX_DATA_PATH, config_path or CONFIG_YAML_PATH,
+                                      config_values_path or CONFIG_VALUES_YAML_PATH)
             rule.add_rule_return(validator.validation(rule.rule_plyara, rule.rule_string, generate_values))
         except Exception as e:
             raise Exception(
