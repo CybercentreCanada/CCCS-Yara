@@ -71,7 +71,7 @@ The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a s
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
 cd CCCS-Yara
-pip install .\requirements.txt
+pip install -r .\requirements.txt
  ```
  
 ## yara_validator_cli.py usage
@@ -196,7 +196,7 @@ Tous les libraries python sont dans le fichier requirements.txt
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
 cd CCCS-Yara
-pip install .\requirements.txt
+pip install -r .\requirements.txt
  ```
  
 ## yara_validator_cli.py en ligne de commandes
