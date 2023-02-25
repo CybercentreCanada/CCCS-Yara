@@ -13,7 +13,7 @@ from yara_validator.yara_file_processor import YaraFileProcessor
 
 # set current working directory
 SCRIPT_LOCATION = Path(__file__).resolve().parent
-VALIDATOR_CFG = SCRIPT_LOCATION / 'validator_cfg.yml'
+VALIDATOR_CFG = os.environ.get('VALIDATOR_CFG', SCRIPT_LOCATION / 'validator_cfg.yml')
 
 # Allow use of custom paths/configurations besides the defaults
 CONFIG_YAML_PATH = os.environ.get('CONFIG_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA.yml')
