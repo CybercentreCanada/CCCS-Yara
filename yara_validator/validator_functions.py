@@ -614,7 +614,7 @@ class Validators:
 class Helper:
     import os
     SCRIPT_LOCATION = Path(__file__).resolve().parent
-    MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
+    MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti'
     if not os.path.exists(MITRE_STIX_DATA_PATH):
         from git import Repo
         print(f'Unable to find STIX data on {MITRE_STIX_DATA_PATH}. Cloning..')
@@ -623,7 +623,7 @@ class Helper:
         repo = Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH)
         repo.git.checkout('4cbf8cc4bdf2121ee987a23bfe5aac4fe4d2f5b1')  # ATT&CK v12.1
 
-    fs = FileSystemSource(MITRE_STIX_DATA_PATH)
+    fs = FileSystemSource(os.path.join(MITRE_STIX_DATA_PATH, 'enterprise-attack'))
 
     @staticmethod
     def valid_metadata_index(rule, index):
