@@ -512,8 +512,6 @@ class Validators:
         self.required_fields[ACTOR].attributefound()
         self.required_fields_index[self.required_fields[ACTOR].position].increment_count()
 
-        # Because there is an actor actor_type becomes required
-        self.required_fields[ACTOR_TYPE].optional = MetadataOpt.REQ_PROVIDED
         metadata = rule_to_validate_actor[METADATA]
         actor_to_check = metadata[metadata_index][ACTOR]
         if re.fullmatch(mitre_group_alias_regex, actor_to_check):
