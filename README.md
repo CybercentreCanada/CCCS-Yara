@@ -50,6 +50,7 @@ rule MemoryModule {
 ## YARA repositories using this standard - thanks!
 - https://github.com/reversinglabs/reversinglabs-yara-rules
 - https://github.com/bartblaze/Yara-rules
+- https://github.com/0xThiebaut/Signatures
 
 ## Components
 
