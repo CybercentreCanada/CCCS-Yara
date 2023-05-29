@@ -68,7 +68,7 @@ def check_validator_cfg(validator_cfg):
     white_space_replacement_values = validator_cfg.get(WHITE_SPACE_REPLACEMENT).get(VALUE)
     if white_space_replacement_values is not None:
         char_to_replace = white_space_replacement_values.get(CHAR_TO_REPLACE).encode('utf-8').decode('unicode_escape')
-        if char_to_replace is None or not re.fullmatch('\s', char_to_replace):
+        if char_to_replace is None or not re.fullmatch(r'\s', char_to_replace):
             print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
                                                                       CHAR_TO_REPLACE,
                                                                       char_to_replace))
@@ -78,7 +78,7 @@ def check_validator_cfg(validator_cfg):
 
         char_replacement = white_space_replacement_values.get(CHAR_REPLACEMENT)\
             .encode('utf-8').decode('unicode_escape')
-        if char_replacement is None or not re.fullmatch('\s', char_replacement):
+        if char_replacement is None or not re.fullmatch(r'\s', char_replacement):
             print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
                                                                       CHAR_REPLACEMENT,
                                                                       char_replacement))
@@ -103,7 +103,7 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
     """
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string
-        representation of the yara file to YaraValidator.valadation
+        representation of the yara file to YaraValidator.validation()
     :param yara_file: The file variable passed in. Usually a string or Path variable
     :param generate_values: determine if the values the validator can generate should be generated or not, default True
     :param check_import_modules: determines if the check for modules that have not been imported is run, default True
