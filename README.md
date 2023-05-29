@@ -12,6 +12,8 @@ This specification also include fields specific to the [MITRE ATT&CK framework](
 
 [AssemblyLine](https://www.cyber.gc.ca/en/assemblyline) supports this specification natively and will leverage it to provide more context around YARA signature hits.
 
+[vscode-yara](https://github.com/infosec-intern/vscode-yara) creates a custom meta section that aligns with this specification, using the User or Workspace settings file, `settings.json`. See [settings.json](settings.json) for an example.
+
 ## Sample rule
 ```
 rule MemoryModule {
@@ -68,7 +70,7 @@ Python 3.6+
 
 All required python packages are in the requirements.txt
 
-The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository:
+The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository:
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
 cd CCCS-Yara
@@ -193,7 +195,7 @@ Python 3.6+
 
 Tous les libraries python sont dans le fichier requirements.txt
 
-[Cyber Threat Intelligence Repository](https://github.com/mitre/cti) est un sous module de ce répertoire:
+[Cyber Threat Intelligence Repository](https://github.com/mitre/cti) est un sous module de ce répertoire:
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
 cd CCCS-Yara
