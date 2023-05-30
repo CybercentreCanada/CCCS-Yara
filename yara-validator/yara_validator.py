@@ -46,6 +46,13 @@ CHAR_REPLACEMENT = 'char_replacement'
 COUNT_OF_REPLACED = 'count_of_replaced'
 
 
+METADATA_ALIASES = {
+    'date': ['creation_date'],
+    'modified': ['last_modified'],
+    'minimum_yara': ['yara_version'],
+}
+
+
 def check_validator_cfg(validator_cfg):
     """
     Validates the loaded configuration file to ensure all values are valid
@@ -452,7 +459,7 @@ class YaraValidator:
 
         rule_to_sort[METADATA] = correct_order
 
-    def process_key(self, key, fields, rule_processing_key, metadata_index):
+    def process_key(self, key, fields, rule_processing_key, metadata_index, alias):
         """
         The primary function that determines how to treat a specific metadata value for validation, it will either call
             the function or perform the regex comparison
@@ -462,7 +469,8 @@ class YaraValidator:
         :param metadata_index: used to reference what the array index of the key being processed is
         :return:
         """
-        if not fields[key].function(rule_processing_key, metadata_index, key):
+        field_f = fields.get(alias, fields.get(key))
+        if not field_f.function(rule_processing_key, metadata_index, key, alias):
             rule_response = 'Field has Invalid Value:\t{!r}'.format(rule_processing_key[METADATA][metadata_index][key])
             return False, rule_response
         return True, ''
@@ -491,16 +499,24 @@ class YaraValidator:
         metadata_vals = rule_to_validate[METADATA]
         index_of_empty_metadata = []
         meta_not_initially_found = []
+        meta_alias_map = {i: k for k, v in METADATA_ALIASES.items() for i in v}
         for metadata_index, metadata in enumerate(metadata_vals):
             if len(metadata.keys()) == 1:
                 key = list(metadata.keys())[0]
                 value = list(metadata.values())[0]
 
+                # Check if this key has been deprecated and aliases to a new field name
+                alias = meta_alias_map.get(key)
+
                 if value == '':
                     index_of_empty_metadata.append(metadata_index)
-                elif key in self.required_fields:
+                elif key in self.required_fields or alias in self.required_fields:
                     validity, rule_response = self.process_key(key, self.required_fields, rule_to_validate,
-                                                               metadata_index)
+                                                               metadata_index, alias)
+                    if alias:
+                        valid.update_warning(True, key,
+                                             f'Warning, this metadata key has been deprecated in favour of "{alias}". '
+                                             'This will be automatically fixed with -i/c.')
                     if not validity:
                         valid.update_validity(validity, key, rule_response)
                 elif str(key).lower() in self.required_fields:
@@ -529,12 +545,13 @@ class YaraValidator:
                 if len(metadata.keys()) == 1:
                     key = list(metadata.keys())[0]
                     value = list(metadata.values())[0]
+                    alias = meta_alias_map.get(key)
 
                     if key in self.required_fields_children:
                         no_children_keys_found = False
                         meta_not_initially_found.remove(metadata_to_check)
                         validity, rule_response = self.process_key(key, self.required_fields_children, rule_to_validate,
-                                                                   metadata_index)
+                                                                   metadata_index, alias)
                         if not validity:
                             valid.update_validity(validity, key, rule_response)
 

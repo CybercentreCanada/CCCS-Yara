@@ -19,6 +19,7 @@ UNIVERSAL_REGEX = r'^[^a-z]*$'
 MITRE_GROUP_NAME = 'name'
 CHILD_PLACE_HOLDER = 'child_place_holder'
 
+
 # potential values of MetadataAttributes.optional variable
 class MetadataOpt(Enum):
     REQ_PROVIDED = 'req_provided'
@@ -82,7 +83,6 @@ class Validators:
             'valid_fingerprint': self.valid_fingerprint,
             'valid_version': self.valid_version,
             'valid_date': self.valid_date,
-            'valid_last_modified': self.valid_last_modified,
             'valid_source': self.valid_source,
             'valid_category': self.valid_category,
             'valid_category_type': self.valid_category_type,
@@ -100,13 +100,13 @@ class Validators:
         self.category_types = category_types
         self.mitre_group_alias = None
 
-    def valid_none(self, rule_to_validate, metadata_index, metadata_key):
+    def valid_none(self, rule_to_validate, metadata_index, metadata_key, alias=None):
         self.required_fields[metadata_key].attributefound()
         self.required_fields_index[self.required_fields[metadata_key].position].increment_count()
         self.required_fields[metadata_key].attributevalid()
         return True
 
-    def valid_regex(self, rule_to_validate, metadata_index, metadata_key):
+    def valid_regex(self, rule_to_validate, metadata_index, metadata_key, alias=None):
         """
         Validates the metadata value using provided regex expression
         :param rule_to_validate: the plyara parsed rule that is being validated
@@ -132,7 +132,7 @@ class Validators:
             return False
         return True
 
-    def valid_uuid(self, rule_to_generate_uuid, metadata_index, metadata_key):
+    def valid_uuid(self, rule_to_generate_uuid, metadata_index, metadata_key, alias=None):
         """
         Creates a valid UUID for the id metadata value and inserts it or verifies an existing id metadata value
         :param rule_to_generate_uuid: the plyara parsed rule that is being validated
@@ -161,7 +161,7 @@ class Validators:
 
         return self.required_fields[UUID].valid
 
-    def valid_fingerprint(self, rule_to_generate_id, metadata_index, metadata_key):
+    def valid_fingerprint(self, rule_to_generate_id, metadata_index, metadata_key, alias=None):
         """
         Calculates a valid fingerprint for the fingerprint metadata value and inserts it or replaces the existing value
             of the fingerprint metadata value.
@@ -192,7 +192,7 @@ class Validators:
 
         return self.required_fields[FINGERPRINT].valid
 
-    def valid_version(self, rule_to_version_check, metadata_index, metadata_key):
+    def valid_version(self, rule_to_version_check, metadata_index, metadata_key, alias=None):
         """
         This value can be generated: there is the option to verify if an existing version format is correct, insert a
             generated version if none was found and if the potential default metadata index would be out of bounds
@@ -209,7 +209,8 @@ class Validators:
         rule_version = {VERSION: '1.0'}
         if Helper.valid_metadata_index(rule_to_version_check, metadata_index):
             if list(rule_to_version_check[METADATA][metadata_index].keys())[0] == VERSION:
-                if isinstance(packaging.version.parse(list(rule_to_version_check[METADATA][metadata_index].values())[0]),
+                if isinstance(packaging.version.parse(
+                        list(rule_to_version_check[METADATA][metadata_index].values())[0]),
                         packaging.version.Version):
                     self.required_fields[VERSION].attributevalid()
                 else:
@@ -223,7 +224,7 @@ class Validators:
 
         return self.required_fields[VERSION].valid
 
-    def valid_date(self, rule_to_date_check, metadata_index, metadata_key):
+    def valid_date(self, rule_to_date_check, metadata_index, metadata_key, alias=None):
         """
         This value can be generated: there is the option to verify if an existing date is correct, insert a generated
             date if none was found and if the potential default metadata index would be out of bounds appends
@@ -234,13 +235,20 @@ class Validators:
         :return: True if the value matches the valid date format and False if it does not match it
         """
         DATE = metadata_key
+        if alias:
+            DATE = alias
         self.required_fields[DATE].attributefound()
         self.required_fields_index[self.required_fields[DATE].position].increment_count()
 
         if Helper.valid_metadata_index(rule_to_date_check, metadata_index):
-            if list(rule_to_date_check[METADATA][metadata_index].keys())[0] == DATE:
+            if list(rule_to_date_check[METADATA][metadata_index].keys())[0] == metadata_key:
                 if Helper.validate_date(list(rule_to_date_check[METADATA][metadata_index].values())[0]):
                     self.required_fields[DATE].attributevalid()
+                    if alias:
+                        # Overwrite with proper metadata field
+                        rule_date = {DATE: list(rule_to_date_check[METADATA][metadata_index].values())[0]}
+                        rule_to_date_check[METADATA].pop(metadata_index)
+                        rule_to_date_check[METADATA].insert(metadata_index, rule_date)
                 else:
                     self.required_fields[DATE].attributeinvalid()
             else:
@@ -254,74 +262,11 @@ class Validators:
 
         return self.required_fields[DATE].valid
 
-    def valid_first_imported(self, rule_to_date_check, metadata_index, metadata_key):
-        """
-        This value can be generated: there is the option to verify if an existing date is correct, insert a generated
-            date if none was found and if the potential default metadata index would be out of bounds appends
-            a generated date
-        :param rule_to_date_check: the plyara parsed rule that is being validated
-        :param metadata_index: used to reference what the array index of the last_modified metadata value is
-        :param metadata_key: the name of the metadata value that is being processed
-        :return: True if the value matches the valid date format and False if it does not match it
-        """
-        FIRST_IMPORTED = metadata_key
-        self.required_fields[FIRST_IMPORTED].attributefound()
-        self.required_fields_index[self.required_fields[FIRST_IMPORTED].position].increment_count()
-
-        if Helper.valid_metadata_index(rule_to_date_check, metadata_index):
-            if list(rule_to_date_check[METADATA][metadata_index].keys())[0] == FIRST_IMPORTED:
-                if Helper.validate_date(list(rule_to_date_check[METADATA][metadata_index].values())[0]):
-                    self.required_fields[FIRST_IMPORTED].attributevalid()
-                else:
-                    self.required_fields[FIRST_IMPORTED].attributeinvalid()
-            else:
-                rule_date = {FIRST_IMPORTED: Helper.current_valid_date()}
-                rule_to_date_check[METADATA].insert(metadata_index, rule_date)
-                self.required_fields[FIRST_IMPORTED].attributevalid()
-        else:
-            rule_date = {FIRST_IMPORTED: Helper.current_valid_date()}
-            rule_to_date_check[METADATA].append(rule_date)
-            self.required_fields[FIRST_IMPORTED].attributevalid()
-
-        return self.required_fields[FIRST_IMPORTED].valid
-
-    def valid_last_modified(self, rule_to_date_check, metadata_index, metadata_key):
-        """
-        This value can be generated: there is the option to verify if an existing date is correct, insert a generated
-            date if none was found and if the potential default metadata index would be out of bounds appends a
-                generated date
-        :param rule_to_date_check: the plyara parsed rule that is being validated
-        :param metadata_index: used to reference what the array index of the last_modified metadata value is
-        :param metadata_key: the name of the metadata value that is being processed
-        :return: True if the value matches the valid date format and False if it does not match it
-        """
-        LAST_MODIFIED = metadata_key
-        self.required_fields[LAST_MODIFIED].attributefound()
-        self.required_fields_index[self.required_fields[LAST_MODIFIED].position].increment_count()
-
-        current_date = Helper.current_valid_date()
-        if Helper.valid_metadata_index(rule_to_date_check, metadata_index):
-            if list(rule_to_date_check[METADATA][metadata_index].keys())[0] == LAST_MODIFIED:
-                if Helper.validate_date(list(rule_to_date_check[METADATA][metadata_index].values())[0]):
-                    self.required_fields[LAST_MODIFIED].attributevalid()
-                else:
-                    self.required_fields[LAST_MODIFIED].attributeinvalid()
-            else:
-                rule_date = {LAST_MODIFIED: current_date}
-                rule_to_date_check[METADATA].insert(metadata_index, rule_date)
-                self.required_fields[LAST_MODIFIED].attributevalid()
-        else:
-            rule_date = {LAST_MODIFIED: current_date}
-            rule_to_date_check[METADATA].append(rule_date)
-            self.required_fields[LAST_MODIFIED].attributevalid()
-
-        return self.required_fields[LAST_MODIFIED].valid
-
-    def valid_source(self, rule_to_source_check, metadata_index, metadata_key):
+    def valid_source(self, rule_to_source_check, metadata_index, metadata_key, alias=None):
         """
         Validates the source
         :param rule_to_source_check:
-        :param metadata_index: used to reference what the array index of the last_modified metadata value is
+        :param metadata_index: used to reference what the array index of the source metadata value is
         :param metadata_key: the name of the metadata value that is being processed
         :return: True if the value matches the UNIVERSAL_REGEX and False if it does not match it
         """
@@ -342,7 +287,7 @@ class Validators:
 
         return self.required_fields[SOURCE].valid
 
-    def valid_mitre_att(self, rule_to_validate_mitre_att, metadata_index, metadata_key):
+    def valid_mitre_att(self, rule_to_validate_mitre_att, metadata_index, metadata_key, alias=None):
         """
         Pulls the value of the mitre_att metadata value and passes it to validate_mitre_att_by_id. This also stores
             any found MITRE ATT&CK software codes to be compared with ones generated by malware metadata values
@@ -370,7 +315,7 @@ class Validators:
 
         return self.required_fields[MITRE_ATT].valid
 
-    def valid_al_config_dumper(self, rule_to_validate_al_config_d, metadata_index, metadata_key):
+    def valid_al_config_dumper(self, rule_to_validate_al_config_d, metadata_index, metadata_key, alias=None):
         """
         Makes the al_config_parser metadata value required if this is found first.
         :param rule_to_validate_al_config_d: the plyara parsed rule that is being validated
@@ -390,7 +335,7 @@ class Validators:
 
         return self.required_fields[AL_CONFIG_D].valid
 
-    def valid_al_config_parser(self, rule_to_validate_al_config_p, metadata_index, metadata_key):
+    def valid_al_config_parser(self, rule_to_validate_al_config_p, metadata_index, metadata_key, alias=None):
         """
         Makes the al_config_dumper metadata value required if this is found first.
         :param rule_to_validate_al_config_p: the plyara parsed rule that is being validated
@@ -410,7 +355,7 @@ class Validators:
 
         return self.required_fields[AL_CONFIG_P].valid
 
-    def valid_category(self, rule_to_validate_category, metadata_index, metadata_key):
+    def valid_category(self, rule_to_validate_category, metadata_index, metadata_key, alias=None):
         """
         Pulls the value of the category metadata value and checks if it is a valid category type.
             Valid options are stored in self.category_types. If the category value is valid and a new metadata
@@ -446,7 +391,7 @@ class Validators:
 
         return self.required_fields[CATEGORY].valid
 
-    def valid_category_type(self, rule_to_validate_type, metadata_index, metadata_key):
+    def valid_category_type(self, rule_to_validate_type, metadata_index, metadata_key, alias=None):
         """
         This will be called by the new metadata created by the valid_category function. Because it references the same
             object as that initialized as CATEGORY_TYPE we can use that to reference the reqired metadata in this
@@ -489,7 +434,7 @@ class Validators:
 
         return self.required_fields[child_metadata_place_holder].valid
 
-    def valid_actor(self, rule_to_validate_actor, metadata_index, metadata_key):
+    def valid_actor(self, rule_to_validate_actor, metadata_index, metadata_key, alias=None):
         """
         Validates the actor, makes the actor_type metadata value required.
             Adds a required metadata value for mitre_group to hold the a potential alias value.
@@ -528,7 +473,7 @@ class Validators:
 
         return self.required_fields[ACTOR].valid
 
-    def mitre_group_generator(self, rule_to_generate_group, metadata_index, metadata_key):
+    def mitre_group_generator(self, rule_to_generate_group, metadata_index, metadata_key, alias=None):
         """
         This will only be looked for if the actor metadata value has already been processed.
             Current functionality is not to check the value of an existing mitre_group metadata value and just overwrite
@@ -576,7 +521,7 @@ class Validators:
 
         return self.required_fields[place_holder].valid
 
-    def mitre_software_generator(self, rule_to_generate_mitre_att, category_key, mitre_key):
+    def mitre_software_generator(self, rule_to_generate_mitre_att, category_key, mitre_key, alias=None):
         """
         This is called to generate any required mitre_att software codes. This is determined by comparing software
             codes generated from the value of malware metadata keys and any already found mitre_att keys containing
