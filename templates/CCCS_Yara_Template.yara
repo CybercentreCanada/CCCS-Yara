@@ -2,8 +2,8 @@ rule insert_name {
 
 	meta:
 		version = ""
-		first_imported = ""
-		last_modified = ""
+		date = ""
+		modified = ""
 		status = "*"
 		sharing = "*"
 		source = "*"
@@ -22,10 +22,10 @@ rule insert_name {
 		hash = ""
 		hash = ""
 		vol_script = ""
-	
+
 	strings:
-		
-	
+
+
 	condition:
-		
+
 }

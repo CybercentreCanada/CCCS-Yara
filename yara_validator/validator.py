@@ -46,6 +46,13 @@ CHAR_REPLACEMENT = 'char_replacement'
 COUNT_OF_REPLACED = 'count_of_replaced'
 
 
+METADATA_ALIASES = {
+    'date': ['creation_date'],
+    'modified': ['last_modified'],
+    'minimum_yara': ['yara_version'],
+}
+
+
 def check_validator_cfg(validator_cfg):
     """
     Validates the loaded configuration file to ensure all values are valid
@@ -68,7 +75,7 @@ def check_validator_cfg(validator_cfg):
     white_space_replacement_values = validator_cfg.get(WHITE_SPACE_REPLACEMENT).get(VALUE)
     if white_space_replacement_values is not None:
         char_to_replace = white_space_replacement_values.get(CHAR_TO_REPLACE).encode('utf-8').decode('unicode_escape')
-        if char_to_replace is None or not re.fullmatch(r'\s', char_to_replace):
+        if char_to_replace is None or not re.fullmatch('\s', char_to_replace):
             print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
                                                                       CHAR_TO_REPLACE,
                                                                       char_to_replace))
@@ -78,7 +85,7 @@ def check_validator_cfg(validator_cfg):
 
         char_replacement = white_space_replacement_values.get(CHAR_REPLACEMENT)\
             .encode('utf-8').decode('unicode_escape')
-        if char_replacement is None or not re.fullmatch(r'\s', char_replacement):
+        if char_replacement is None or not re.fullmatch('\s', char_replacement):
             print('{!r}: {!r} has an invalid parameter - {!r}'.format(VALIDATOR_CFG,
                                                                       CHAR_REPLACEMENT,
                                                                       char_replacement))
@@ -103,7 +110,7 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
     """
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string
-        representation of the yara file to YaraValidator.validation()
+        representation of the yara file to YaraValidator.valadation
     :param yara_file: The file variable passed in. Usually a string or Path variable
     :param generate_values: determine if the values the validator can generate should be generated or not, default True
     :param check_import_modules: determines if the check for modules that have not been imported is run, default True
@@ -466,7 +473,7 @@ class YaraValidator:
 
         rule_to_sort[METADATA] = correct_order
 
-    def process_key(self, key, fields, rule_processing_key, metadata_index):
+    def process_key(self, key, fields, rule_processing_key, metadata_index, alias):
         """
         The primary function that determines how to treat a specific metadata value for validation, it will either call
             the function or perform the regex comparison
@@ -476,7 +483,8 @@ class YaraValidator:
         :param metadata_index: used to reference what the array index of the key being processed is
         :return:
         """
-        if not fields[key].function(rule_processing_key, metadata_index, key):
+        field_f = fields.get(alias, fields.get(key))
+        if not field_f.function(rule_processing_key, metadata_index, key, alias):
             rule_response = 'Field has Invalid Value:\t{!r}'.format(rule_processing_key[METADATA][metadata_index][key])
             return False, rule_response
         return True, ''
@@ -505,16 +513,24 @@ class YaraValidator:
         metadata_vals = rule_to_validate[METADATA]
         index_of_empty_metadata = []
         meta_not_initially_found = []
+        meta_alias_map = {i: k for k, v in METADATA_ALIASES.items() for i in v}
         for metadata_index, metadata in enumerate(metadata_vals):
             if len(metadata.keys()) == 1:
                 key = list(metadata.keys())[0]
                 value = list(metadata.values())[0]
 
+                # Check if this key has been deprecated and aliases to a new field name
+                alias = meta_alias_map.get(key)
+
                 if value == '':
                     index_of_empty_metadata.append(metadata_index)
-                elif key in self.required_fields:
+                elif key in self.required_fields or alias in self.required_fields:
                     validity, rule_response = self.process_key(key, self.required_fields, rule_to_validate,
-                                                               metadata_index)
+                                                               metadata_index, alias)
+                    if alias:
+                        valid.update_warning(True, key,
+                                             f'Warning, this metadata key has been deprecated in favour of "{alias}". '
+                                             'This will be automatically fixed with -i/c.')
                     if not validity:
                         valid.update_validity(validity, key, rule_response)
                 elif str(key).lower() in self.required_fields:
@@ -543,12 +559,13 @@ class YaraValidator:
                 if len(metadata.keys()) == 1:
                     key = list(metadata.keys())[0]
                     value = list(metadata.values())[0]
+                    alias = meta_alias_map.get(key)
 
                     if key in self.required_fields_children:
                         no_children_keys_found = False
                         meta_not_initially_found.remove(metadata_to_check)
                         validity, rule_response = self.process_key(key, self.required_fields_children, rule_to_validate,
-                                                                   metadata_index)
+                                                                   metadata_index, alias)
                         if not validity:
                             valid.update_validity(validity, key, rule_response)
 
