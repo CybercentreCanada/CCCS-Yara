@@ -98,10 +98,10 @@ version:
 
 score:
    description: "Percentage of confidence in the rule."
-   format: unvalidated
+   format: integer
    unique: Yes
    optional: Yes
-   validator: None
+   validator: valid_percentage
 
 minimum_yara:
    description: "Minimum version of Yara to run the rule"
