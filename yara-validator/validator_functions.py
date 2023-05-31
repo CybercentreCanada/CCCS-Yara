@@ -90,7 +90,8 @@ class Validators:
             'valid_actor': self.valid_actor,
             'mitre_group_generator': self.mitre_group_generator,
             'valid_al_config_dumper': self.valid_al_config_dumper,
-            'valid_al_config_parser': self.valid_al_config_parser
+            'valid_al_config_parser': self.valid_al_config_parser,
+            'valid_percentage': self.valid_percentage
         }
 
     def update(self, required_fields, required_fields_index, required_fields_children, category_types):
@@ -105,6 +106,32 @@ class Validators:
         self.required_fields_index[self.required_fields[metadata_key].position].increment_count()
         self.required_fields[metadata_key].attributevalid()
         return True
+
+    def valid_percentage(self, rule_to_validate, metadata_index, metadata_key, alias=None):
+        """
+        Validates the metadata value is a valid percentage (within the range [0, 100])
+        :param rule_to_validate: the plyara parsed rule that is being validated
+        :param metadata_index: used to reference what the array index of the id metadata value is
+        :param metadata_key: the name of the metadata value that is being processed
+        :return: True if the value of the metadata value follows the regex expression or
+            False if the value is does not match the expression
+        """
+
+        try:
+            value = int(list(rule_to_validate[METADATA][metadata_index].values())[0])
+
+            self.required_fields[metadata_key].attributefound()
+            self.required_fields_index[self.required_fields[metadata_key].position].increment_count()
+
+            if value <= 100 and value >= 0:
+                self.required_fields[metadata_key].attributevalid()
+            else:
+                self.required_fields[metadata_key].attributeinvalid()
+                return False
+            return True
+        except Exception:
+            self.required_fields[metadata_key].attributeinvalid()
+            return False
 
     def valid_regex(self, rule_to_validate, metadata_index, metadata_key, alias=None):
         """
