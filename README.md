@@ -12,15 +12,18 @@ This specification also include fields specific to the [MITRE ATT&CK framework](
 
 [AssemblyLine](https://www.cyber.gc.ca/en/assemblyline) supports this specification natively and will leverage it to provide more context around YARA signature hits.
 
+[vscode-yara](https://github.com/infosec-intern/vscode-yara) creates a custom meta section that aligns with this specification, using the User or Workspace settings file, `settings.json`. See [settings.json](settings.json) for an example.
+
 ## Sample rule
+
 ```
 rule MemoryModule {
     meta:
 	id = "6O9mUMvPhziJ72IXHf6muZ"
 	fingerprint = "4aa0a23f28698898404d700cb363ddf06dd275f5798815e797113656a2a40ae8"
 	version = "1.0"
-	first_imported = "2020-05-06"
-	last_modified = "2020-05-06"
+	date = "2020-05-06"
+	modified = "2020-05-06"
 	status = "RELEASED"
 	sharing = "TLP:WHITE"
 	source = "CCCS"
@@ -48,18 +51,20 @@ rule MemoryModule {
 ```
 
 ## YARA repositories using this standard - thanks!
+
 - https://github.com/reversinglabs/reversinglabs-yara-rules
 - https://github.com/bartblaze/Yara-rules
+- https://github.com/0xThiebaut/Signatures
 
 ## Components
 
-yara_validator.py:		This is the validator library. It is used to validate the metadata section of YARA rules. It verifies specified metadata information, auto-generates some of metadata information and re-sorts the metadata information into the canonical order with all 'unknown' metadata information appended to the bottom.
+yara_validator.py: This is the validator library. It is used to validate the metadata section of YARA rules. It verifies specified metadata information, auto-generates some of metadata information and re-sorts the metadata information into the canonical order with all 'unknown' metadata information appended to the bottom.
 
-- [CCCS_YARA.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml):		This is the definition of the CCCS YARA Standard in the YAML format. (Limitation: This file is provided to show what fields are expected, currently the yara_validator doeSn't use this file directly, this will be addressed in a future release.)
+- [CCCS_YARA.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml): This is the definition of the CCCS YARA Standard in the YAML format. (Limitation: This file is provided to show what fields are expected, currently the yara_validator doeSn't use this file directly, this will be addressed in a future release.)
 
-- [CCCS_YARA_values.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA_values.yml):		File which describe the list of acceptable values for fields defined in the CCCS_YARA.yml
+- [CCCS_YARA_values.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA_values.yml): File which describe the list of acceptable values for fields defined in the CCCS_YARA.yml
 
-yara_validator_cli.py:		This is a command line interface utility. It takes a file, list of files, a folder looking for files with the .yar or .yara extension. 
+yara_validator_cli.py: This is a command line interface utility. It takes a file, list of files, a folder looking for files with the .yar or .yara extension.
 
 ## Requirements
 
@@ -67,23 +72,24 @@ Python 3.6+
 
 All required python packages are in the requirements.txt
 
-The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository:
+The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository:
+
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
 cd CCCS-Yara
-pip install .\requirements.txt
- ```
- 
+pip install -r .\requirements.txt
+```
+
 ## yara_validator_cli.py usage
 
 ```
-yara_validator_cli.py -h 
-     ____ ____ ____ ____   __   __ _    ____      _    
-    / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \   
-   | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \  
-   | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
-    \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
-    
+yara_validator_cli.py -h
+     ____ ____ ____ ____   __   __ _    ____      _
+    / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
+   | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
+   | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
+    \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
+
 usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
                              [-m] [-i | -c]
                              paths [paths ...]
@@ -116,7 +122,7 @@ optional arguments:
                        -c.
   -c, --create-files   Writes a new file for each valid file, mutually
                        exclusive with -i.
-  ```
+```
 
 Quick example:
 
@@ -138,14 +144,15 @@ Ce standard pour les méta données inclus aussi des champs spécifique au [MITR
 [AssemblyLine](https://www.cyber.gc.ca/fr/chaine-de-montage-assemblyline) supporte cette spécification nativement et l'utilisera pour fournir d'avantage d'information à l'utilisateur lors du déclanchement d'une signature.
 
 ## Exemple
+
 ```
 rule MemoryModule {
     meta:
 	id = "6O9mUMvPhziJ72IXHf6muZ"
 	fingerprint = "4aa0a23f28698898404d700cb363ddf06dd275f5798815e797113656a2a40ae8"
 	version = "1.0"
-	first_imported = "2020-05-06"
-	last_modified = "2020-05-06"
+	date = "2020-05-06"
+	modified = "2020-05-06"
 	status = "RELEASED"
 	sharing = "TLP:WHITE"
 	source = "CCCS"
@@ -173,18 +180,19 @@ rule MemoryModule {
 ```
 
 ## Répertoires de règles YARA qui utilise ce standard - merci!
+
 - https://github.com/reversinglabs/reversinglabs-yara-rules
 - https://github.com/bartblaze/Yara-rules
 
 ## Composantes
 
-yara_validator.py:		La librairie de validation. Elle permet de vérifier si une règle YARA a tous les attributs nécessaires, elle auto-génère aussi certain attribut et les ordonnent selon l'ontologie. Tous les attributs supplémentaires ne faisant pas partie de la spécification sont placé à la fin.
+yara_validator.py: La librairie de validation. Elle permet de vérifier si une règle YARA a tous les attributs nécessaires, elle auto-génère aussi certain attribut et les ordonnent selon l'ontologie. Tous les attributs supplémentaires ne faisant pas partie de la spécification sont placé à la fin.
 
-- [CCCS_YARA.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml):		Fichier de de définition de la spécification. (Limitation: Ce fichier démontre les attributs nécessaires, présentement le validateur n'utilise pas se fichier directement, ceci sera améliorer dans le futur.)
+- [CCCS_YARA.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml): Fichier de de définition de la spécification. (Limitation: Ce fichier démontre les attributs nécessaires, présentement le validateur n'utilise pas se fichier directement, ceci sera améliorer dans le futur.)
 
-- [CCCS_YARA_values.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA_values.yml):		Fichier qui décrit les valeurs acceptables pour chacun des attributs définit dans CCCS_YARA.yml.
+- [CCCS_YARA_values.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA_values.yml): Fichier qui décrit les valeurs acceptables pour chacun des attributs définit dans CCCS_YARA.yml.
 
-yara_validator_cli.py:		Utilitaire de validation pour la ligne de commande. Il accepte une règle, une liste de règles ou un dossier pour validé les fichiers se terminant par .yar ou .YARA.  
+yara_validator_cli.py: Utilitaire de validation pour la ligne de commande. Il accepte une règle, une liste de règles ou un dossier pour validé les fichiers se terminant par .yar ou .YARA.
 
 ## Exigences
 
@@ -192,23 +200,24 @@ Python 3.6+
 
 Tous les libraries python sont dans le fichier requirements.txt
 
-[Cyber Threat Intelligence Repository](https://github.com/mitre/cti) est un sous module de ce répertoire:
+[Cyber Threat Intelligence Repository](https://github.com/mitre/cti) est un sous module de ce répertoire:
+
 ```
 git clone --recurse-submodules https://github.com/CybercentreCanada/CCCS-Yara.git
 cd CCCS-Yara
-pip install .\requirements.txt
- ```
- 
+pip install -r .\requirements.txt
+```
+
 ## yara_validator_cli.py en ligne de commandes
 
 ```
-yara_validator_cli.py -h 
-     ____ ____ ____ ____   __   __ _    ____      _    
-    / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \   
-   | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \  
-   | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
-    \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
-    
+yara_validator_cli.py -h
+     ____ ____ ____ ____   __   __ _    ____      _
+    / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
+   | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
+   | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
+    \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
+
 usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
                              [-m] [-i | -c]
                              paths [paths ...]
@@ -241,5 +250,4 @@ optional arguments:
                        -c.
   -c, --create-files   Writes a new file for each valid file, mutually
                        exclusive with -i.
-  ```
-
+```
