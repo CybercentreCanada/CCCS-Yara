@@ -10,14 +10,14 @@ rule_statuses:
       value: 'DEPRECATED'
 
 sharing_classifications:
-   - 
+   -
       value: 'TLP:CLEAR|TLP:CLEAR//COMMERCIAL|TLP:WHITE|TLP:WHITE//COMMERCIAL'
    -
       value: 'TLP:GREEN|TLP:GREEN//COMMERCIAL'
    -
       value: 'TLP:AMBER|TLP:AMBER//COMMERCIAL'
    -
-      value: 'TLP:AMBER+STRICT|TLP:AMBER+STRICT//COMMERCIAL'
+      value: 'TLP:AMBER\+STRICT|TLP:AMBER\+STRICT//COMMERCIAL'
 
 category_types:
    -
