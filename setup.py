@@ -7,9 +7,10 @@ with open('requirements.txt', 'r') as fh:
     requirements = fh.readlines()
 
 s = setup(
-    name="cccs_yara_validator",
-    version="2.0.0",
-    description="A utility for YARA rule metadata validation",
+    name="cccs-yara",
+    use_scm_version=True,
+    setup_requires=["setuptools_scm"],
+    description="A CCCS utility for YARA rule metadata validation",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),

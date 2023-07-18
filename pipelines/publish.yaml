@@ -1,0 +1,52 @@
+name: publish
+
+trigger:
+  branches:
+    exclude:
+    - '*'
+  tags:
+    include: ["v*"]
+pr: none
+
+pool:
+  vmImage: "ubuntu-20.04"
+
+jobs:
+- job: build_and_deploy
+  displayName: Build and Deploy
+  variables:
+  - group: deployment-information
+
+  steps:
+  - task: UsePythonVersion@0
+    displayName: 'Use Python 3.9'
+    inputs:
+      versionSpec: '3.9'
+
+  - script: |
+      set -x
+      python -m pip install -U build
+      python -m build
+      ls dist
+    displayName: Build
+
+
+  - script: |
+      set -xv  # Echo commands before they are run
+      sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
+      ls dist
+      twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
+    displayName: Deploy to Test PyPI
+    env:
+      TWINE_USERNAME: $(twineUsername)
+      TWINE_PASSWORD: $(twinePassword)
+
+  - script: |
+      set -xv  # Echo commands before they are run
+      sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
+      ls dist
+      twine upload --skip-existing dist/*
+    displayName: Deploy to PyPI
+    env:
+      TWINE_USERNAME: $(twineUsername)
+      TWINE_PASSWORD: $(twinePassword)
