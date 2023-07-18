@@ -8,7 +8,7 @@ with open('requirements.txt', 'r') as fh:
 
 s = setup(
     name="cccs_yara_validator",
-    version="1.0.0",
+    version="2.0.0",
     description="A utility for YARA rule metadata validation",
     long_description=long_description,
     long_description_content_type="text/markdown",

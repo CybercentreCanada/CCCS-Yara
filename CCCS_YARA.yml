@@ -284,20 +284,6 @@ vol_script:
    optional: Yes
    validator: None
 
-al_configdumper:
-   description: "Used by Assembly Line"
-   format: "unvalidated"
-   unique: Yes
-   optional: Yes
-   validator: valid_al_config_dumper
-
-al_configparser:
-   description: "Used by Assembly Line"
-   format: "unvalidated"
-   unique: Yes
-   optional: Yes
-   validator: valid_al_config_parser
-
 al_*:
    description: "Assembly Line specific metadata added for internal Assembly Line use"
    format: "unvalidated"

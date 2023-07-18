@@ -19,7 +19,18 @@ BASE62_REGEX = r'^[0-9a-zA-z]+$'
 UNIVERSAL_REGEX = r'^[^a-z]*$'
 MITRE_GROUP_NAME = 'name'
 CHILD_PLACE_HOLDER = 'child_place_holder'
-
+DATE_FORMATS = ["%Y-%m", "%Y.%m", "%Y/%m",
+                "%m/%d/%Y", "%m/%d/%y", "%d/%m/%Y", "%d/%m/%y",
+                "%d-%m-%Y", "%m-%d-%Y", "%m-%d-%y", "%Y-%m-%d",
+                "%d.%m.%Y", "%m.%d.%Y", "%m.%d.%y", "%Y.%m.%d",
+                "%f/%e/%Y", "%f/%e/%y", "%e/%f/%Y", "%e/%f/%y",
+                "%f-%e-%Y", "%f-%e-%y", "%e-%f-%Y", "%e-%f-%y",
+                "%f.%e.%Y", "%f.%e.%y", "%e.%f.%Y", "%e.%f.%y",
+                "%b %e, %Y", "%B %e, %Y",
+                "%b %d, %Y", "%B %d, %Y",
+                "%b %e %Y", "%B %e %Y", "%e %b %Y", "%e %B %Y",
+                "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y",
+                "%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %I:%M:%S %p"]
 
 # potential values of MetadataAttributes.optional variable
 class MetadataOpt(Enum):
@@ -69,6 +80,20 @@ def check_encoding(rule_string, encoding_flag):
     return True
 
 
+def convert_date(date):
+    # Try a variety of known datetime formats
+    # Return success in conversion as well as new formatted date
+
+    for datetime_format in DATE_FORMATS:
+        # Try a variety of known datetime formats
+        try:
+            parsed_date = datetime.datetime.strptime(date, datetime_format)
+            return True, parsed_date.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return False, date
+
+
 class Validators:
     def __init__(self):
         self.required_fields = None
@@ -90,8 +115,6 @@ class Validators:
             'valid_mitre_att': self.valid_mitre_att,
             'valid_actor': self.valid_actor,
             'mitre_group_generator': self.mitre_group_generator,
-            'valid_al_config_dumper': self.valid_al_config_dumper,
-            'valid_al_config_parser': self.valid_al_config_parser,
             'valid_percentage': self.valid_percentage
         }
 
@@ -262,6 +285,13 @@ class Validators:
         :param metadata_key: the name of the metadata value that is being processed
         :return: True if the value matches the valid date format and False if it does not match it
         """
+        def update_metadata(data, force=False):
+            if alias or force:
+                # Overwrite with proper metadata field
+                rule_date = {DATE: data}
+                rule_to_date_check[METADATA].pop(metadata_index)
+                rule_to_date_check[METADATA].insert(metadata_index, rule_date)
+
         DATE = metadata_key
         if alias:
             DATE = alias
@@ -270,15 +300,18 @@ class Validators:
 
         if Helper.valid_metadata_index(rule_to_date_check, metadata_index):
             if list(rule_to_date_check[METADATA][metadata_index].keys())[0] == metadata_key:
-                if Helper.validate_date(list(rule_to_date_check[METADATA][metadata_index].values())[0]):
+                date = list(rule_to_date_check[METADATA][metadata_index].values())[0]
+                if Helper.validate_date(date):
                     self.required_fields[DATE].attributevalid()
-                    if alias:
-                        # Overwrite with proper metadata field
-                        rule_date = {DATE: list(rule_to_date_check[METADATA][metadata_index].values())[0]}
-                        rule_to_date_check[METADATA].pop(metadata_index)
-                        rule_to_date_check[METADATA].insert(metadata_index, rule_date)
+                    update_metadata(date)
                 else:
-                    self.required_fields[DATE].attributeinvalid()
+                    # Date isn't in the expected format, let's see if we can convert it
+                    success, formatted_date = convert_date(date)
+                    if success and Helper.validate_date(formatted_date):
+                        self.required_fields[DATE].attibutevalid()
+                        update_metadata(date, force=True)
+                    else:
+                        self.required_fields[DATE].attributeinvalid()
             else:
                 rule_date = {DATE: Helper.current_valid_date()}
                 rule_to_date_check[METADATA].insert(metadata_index, rule_date)

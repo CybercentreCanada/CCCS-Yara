@@ -402,7 +402,7 @@ class YaraValidator:
         self.validators = Validators()
         self.required_fields = {}
         self.metadata_keys_regex = r''
-        self.metadata_keys_filter = r'^malware_type$|^actor_type$'
+        self.metadata_keys_filter = r'^malware_type$|^actor_type$|original_.*'
         self.import_yara_cfg()
 
         self.required_fields_index = [Positional(i) for i in range(len(self.required_fields))]
