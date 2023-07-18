@@ -7,10 +7,10 @@ import yaml
 from clint.textui import colored, puts
 from pathlib import Path
 from textwrap import dedent
+from yara_validator.constants import CONFIG_YAML_PATH as STANDARD_YAML_PATH
 from yara_validator.validator import run_yara_validator
 
 
-STANDARD_YAML_PATH = Path(__file__).resolve().parent / Path('CCCS_YARA.yml')
 YARA_FILENAME_REGEX = r'(\.yara|\.yar|\.rules)$'
 YARA_VALID_PREFIX = r'valid_'
 YARA_VALID_PREFIX_REG = re.compile(r'^' + YARA_VALID_PREFIX)
@@ -295,11 +295,11 @@ def git_ci(changed_file_paths):
 
 def main():
     print('''\
-      ____ ____ ____ ____   __   __ _    ____      _     
-     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \    
-    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \   
-    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \  
-     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
+      ____ ____ ____ ____   __   __ _    ____      _
+     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \\
+    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \\
+    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \\
+     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\\
      ''')
 
     options = parse_args()

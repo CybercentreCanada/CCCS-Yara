@@ -1,5 +1,4 @@
 import datetime  # for date checking function
-import hashlib
 import re
 import uuid
 from enum import Enum
@@ -12,6 +11,7 @@ from stix2 import FileSystemSource
 from stix2 import Filter
 import plyara.utils
 
+from yara_validator.constants import MITRE_STIX_DATA_PATH
 from yara_validator.stix2_patch.filter_casefold import FilterCasefold
 
 METADATA = 'metadata'
@@ -614,8 +614,6 @@ class Validators:
 
 class Helper:
     import os
-    SCRIPT_LOCATION = Path(__file__).resolve().parent
-    MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti'
     if not os.path.exists(MITRE_STIX_DATA_PATH):
         from git import Repo
         print(f'Unable to find STIX data on {MITRE_STIX_DATA_PATH}. Cloning..')

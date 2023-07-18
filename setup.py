@@ -12,12 +12,12 @@ s = setup(
     description="A utility for YARA rule metadata validation",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=find_packages(),
+    packages=['yara_validator'],
     install_requires=requirements,
     entry_points="""
     [console_scripts]
     yara_validator=yara_validator.cli:main
     """,
-    package_data={'cccs_yara_validator': ['*.yml']},
+    package_data={'yara_validator': ['*.yml']},
     include_package_data=True,
 )

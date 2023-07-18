@@ -8,18 +8,9 @@ import yaml
 # for querying the MITRE ATT&CK data
 from stix2 import FileSystemSource
 
+from yara_validator.constants import SCRIPT_LOCATION, VALIDATOR_CFG, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH, MITRE_STIX_DATA_PATH
 from yara_validator.validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
 from yara_validator.yara_file_processor import YaraFileProcessor
-
-# set current working directory
-SCRIPT_LOCATION = Path(__file__).resolve().parent
-VALIDATOR_CFG = os.environ.get('VALIDATOR_CFG', SCRIPT_LOCATION / 'validator_cfg.yml')
-
-# Allow use of custom paths/configurations besides the defaults
-CONFIG_YAML_PATH = os.environ.get('CONFIG_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA.yml')
-CONFIG_VALUES_YAML_PATH = os.environ.get('CONFIG_VALUES_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA_values.yml')
-MITRE_STIX_DATA_PATH = os.environ.get('MITRE_STIX_DATA_PATH', SCRIPT_LOCATION.parent / 'cti/enterprise-attack')
-
 
 # constants to deal with various required string comparisons
 SCOPES = 'scopes'
