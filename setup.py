@@ -12,7 +12,7 @@ s = setup(
     description="A utility for YARA rule metadata validation",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=['yara_validator'],
+    packages=find_packages(),
     install_requires=requirements,
     entry_points="""
     [console_scripts]
