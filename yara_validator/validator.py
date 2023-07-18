@@ -646,7 +646,7 @@ class YaraValidator:
                     key = list(value.keys())[0]
                     value = list(value.values())[0]
                     if key == CATEGORY:
-                        warning_message = 'Category: {!r} was selected but there is no associated metadate with more ' \
+                        warning_message = 'Category: {!r} was selected but there is no associated metadata with more ' \
                                           'information i.e. malware: "name of the malware".'.format(value)
                         valid.update_warning(True, CATEGORY_TYPE, warning_message)
 
