@@ -1,4 +1,0 @@
-[submodule "cti"]
-	path = cti
-	url = https://github.com/mitre/cti.git
-	shallow = true

@@ -5,21 +5,12 @@ from pathlib import Path
 
 import plyara
 import yaml
-from plyara.utils import rebuild_yara_rule
 # for querying the MITRE ATT&CK data
 from stix2 import FileSystemSource
 
-from validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
-from yara_file_processor import YaraFileProcessor, YaraRule
-
-# set current working directory
-SCRIPT_LOCATION = Path(__file__).resolve().parent
-VALIDATOR_CFG = SCRIPT_LOCATION / 'validator_cfg.yml'
-MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
-
-# Allow use of custom CCCS_YARA*.yml
-CONFIG_YAML_PATH = os.environ.get('CONFIG_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA.yml')
-CONFIG_VALUES_YAML_PATH = os.environ.get('CONFIG_VALUES_YAML_PATH', SCRIPT_LOCATION.parent / 'CCCS_YARA_values.yml')
+from yara_validator.constants import SCRIPT_LOCATION, VALIDATOR_CFG, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH, MITRE_STIX_DATA_PATH
+from yara_validator.validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
+from yara_validator.yara_file_processor import YaraFileProcessor
 
 # constants to deal with various required string comparisons
 SCOPES = 'scopes'
@@ -105,7 +96,8 @@ def check_validator_cfg(validator_cfg):
         exit(1)
 
 
-def run_yara_validator(yara_file, generate_values=True, check_import_modules=True):
+def run_yara_validator(yara_file, generate_values=True, check_import_modules=True, config_path=None,
+                       config_values_path=None, validator_config_path=None):
     """
     This is the base function that should be called to validate a rule. It will take as an argument the file path,
         create a YaraValidator object, parse that file with plyara and pass that parsed object and the string
@@ -115,6 +107,18 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
     :param check_import_modules: determines if the check for modules that have not been imported is run, default True
     :return:
     """
+    if config_path:
+        global CONFIG_YAML_PATH
+        CONFIG_YAML_PATH = config_path
+
+    if config_values_path:
+        global CONFIG_VALUES_YAML_PATH
+        CONFIG_VALUES_YAML_PATH = config_values_path
+
+    if validator_config_path:
+        global VALIDATOR_CFG
+        CONFIG_VALUES_YAML_PATH = validator_config_path
+
     with open(VALIDATOR_CFG, 'r', encoding='utf8') as config_file:
         validator_configuration = yaml.safe_load(config_file)
 
@@ -138,7 +142,8 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
 
     for rule in yara_file_processor.yara_rules:
         try:
-            validator = YaraValidator(MITRE_STIX_DATA_PATH, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH)
+            validator = YaraValidator(MITRE_STIX_DATA_PATH, config_path or CONFIG_YAML_PATH,
+                                      config_values_path or CONFIG_VALUES_YAML_PATH)
             rule.add_rule_return(validator.validation(rule.rule_plyara, rule.rule_string, generate_values))
         except Exception as e:
             raise Exception(
@@ -388,7 +393,7 @@ class YaraValidator:
         self.validators = Validators()
         self.required_fields = {}
         self.metadata_keys_regex = r''
-        self.metadata_keys_filter = r'^malware_type$|^actor_type$'
+        self.metadata_keys_filter = r'^malware_type$|^actor_type$|original_.*'
         self.import_yara_cfg()
 
         self.required_fields_index = [Positional(i) for i in range(len(self.required_fields))]
@@ -750,7 +755,8 @@ class YaraValidator:
         :param regex_metadata: name of the metadata in the file that contains multiple regex expressions
         :return: single line of regex expression
         """
-        regex_yaml_path = SCRIPT_LOCATION.parent / file_name
+        regex_yaml_path = CONFIG_VALUES_YAML_PATH if "CCCS_YARA_values.yml" in file_name else \
+            SCRIPT_LOCATION.parent / file_name
         with open(regex_yaml_path, 'r', encoding='utf8') as yaml_file:
             scheme = yaml.safe_load(yaml_file)
 

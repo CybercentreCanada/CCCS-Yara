@@ -1,5 +1,4 @@
 import datetime  # for date checking function
-import hashlib
 import re
 import uuid
 from enum import Enum
@@ -10,14 +9,28 @@ import packaging.version
 import stix2.exceptions
 from stix2 import FileSystemSource
 from stix2 import Filter
+import plyara.utils
 
-from stix2_patch.filter_casefold import FilterCasefold
+from yara_validator.constants import MITRE_STIX_DATA_PATH
+from yara_validator.stix2_patch.filter_casefold import FilterCasefold
 
 METADATA = 'metadata'
 BASE62_REGEX = r'^[0-9a-zA-z]+$'
 UNIVERSAL_REGEX = r'^[^a-z]*$'
 MITRE_GROUP_NAME = 'name'
 CHILD_PLACE_HOLDER = 'child_place_holder'
+DATE_FORMATS = ["%Y-%m", "%Y.%m", "%Y/%m",
+                "%m/%d/%Y", "%m/%d/%y", "%d/%m/%Y", "%d/%m/%y",
+                "%d-%m-%Y", "%m-%d-%Y", "%m-%d-%y", "%Y-%m-%d",
+                "%d.%m.%Y", "%m.%d.%Y", "%m.%d.%y", "%Y.%m.%d",
+                "%f/%e/%Y", "%f/%e/%y", "%e/%f/%Y", "%e/%f/%y",
+                "%f-%e-%Y", "%f-%e-%y", "%e-%f-%Y", "%e-%f-%y",
+                "%f.%e.%Y", "%f.%e.%y", "%e.%f.%Y", "%e.%f.%y",
+                "%b %e, %Y", "%B %e, %Y",
+                "%b %d, %Y", "%B %d, %Y",
+                "%b %e %Y", "%B %e %Y", "%e %b %Y", "%e %B %Y",
+                "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y",
+                "%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %I:%M:%S %p"]
 
 
 # potential values of MetadataAttributes.optional variable
@@ -68,6 +81,20 @@ def check_encoding(rule_string, encoding_flag):
     return True
 
 
+def convert_date(date):
+    # Try a variety of known datetime formats
+    # Return success in conversion as well as new formatted date
+
+    for datetime_format in DATE_FORMATS:
+        # Try a variety of known datetime formats
+        try:
+            parsed_date = datetime.datetime.strptime(date, datetime_format)
+            return True, parsed_date.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return False, date
+
+
 class Validators:
     def __init__(self):
         self.required_fields = None
@@ -89,8 +116,6 @@ class Validators:
             'valid_mitre_att': self.valid_mitre_att,
             'valid_actor': self.valid_actor,
             'mitre_group_generator': self.mitre_group_generator,
-            'valid_al_config_dumper': self.valid_al_config_dumper,
-            'valid_al_config_parser': self.valid_al_config_parser,
             'valid_percentage': self.valid_percentage
         }
 
@@ -203,7 +228,7 @@ class Validators:
         self.required_fields[FINGERPRINT].attributefound()
         self.required_fields_index[self.required_fields[FINGERPRINT].position].increment_count()
 
-        rule_hash = Helper.calculate_rule_hash(rule_to_generate_id)
+        rule_hash = plyara.utils.generate_hash(rule_to_generate_id)
         if rule_hash:
             rule_id = {FINGERPRINT: rule_hash}
             if Helper.valid_metadata_index(rule_to_generate_id, metadata_index):
@@ -261,6 +286,13 @@ class Validators:
         :param metadata_key: the name of the metadata value that is being processed
         :return: True if the value matches the valid date format and False if it does not match it
         """
+        def update_metadata(data, force=False):
+            if alias or force:
+                # Overwrite with proper metadata field
+                rule_date = {DATE: data}
+                rule_to_date_check[METADATA].pop(metadata_index)
+                rule_to_date_check[METADATA].insert(metadata_index, rule_date)
+
         DATE = metadata_key
         if alias:
             DATE = alias
@@ -269,15 +301,18 @@ class Validators:
 
         if Helper.valid_metadata_index(rule_to_date_check, metadata_index):
             if list(rule_to_date_check[METADATA][metadata_index].keys())[0] == metadata_key:
-                if Helper.validate_date(list(rule_to_date_check[METADATA][metadata_index].values())[0]):
+                date = list(rule_to_date_check[METADATA][metadata_index].values())[0]
+                if Helper.validate_date(date):
                     self.required_fields[DATE].attributevalid()
-                    if alias:
-                        # Overwrite with proper metadata field
-                        rule_date = {DATE: list(rule_to_date_check[METADATA][metadata_index].values())[0]}
-                        rule_to_date_check[METADATA].pop(metadata_index)
-                        rule_to_date_check[METADATA].insert(metadata_index, rule_date)
+                    update_metadata(date)
                 else:
-                    self.required_fields[DATE].attributeinvalid()
+                    # Date isn't in the expected format, let's see if we can convert it
+                    success, formatted_date = convert_date(date)
+                    if success and Helper.validate_date(formatted_date):
+                        self.required_fields[DATE].attibutevalid()
+                        update_metadata(date, force=True)
+                    else:
+                        self.required_fields[DATE].attributeinvalid()
             else:
                 rule_date = {DATE: Helper.current_valid_date()}
                 rule_to_date_check[METADATA].insert(metadata_index, rule_date)
@@ -579,12 +614,15 @@ class Validators:
 
 
 class Helper:
-    SCRIPT_LOCATION = Path(__file__).resolve().parent
-    MITRE_STIX_DATA_PATH = SCRIPT_LOCATION.parent / 'cti/enterprise-attack'
-    VALIDATOR_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_YARA_values.yml'
-    CONFIGURATION_YAML_PATH = SCRIPT_LOCATION.parent / 'CCCS_YARA.yml'
+    import os
+    if not os.path.exists(MITRE_STIX_DATA_PATH):
+        from git import Repo
+        print(f'Unable to find STIX data on {MITRE_STIX_DATA_PATH}. Cloning..')
 
-    fs = FileSystemSource(MITRE_STIX_DATA_PATH)
+        os.makedirs(MITRE_STIX_DATA_PATH)
+        repo = Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH, depth=1,
+                               branch="ATT&CK-v13.1")
+    fs = FileSystemSource(os.path.join(MITRE_STIX_DATA_PATH, 'enterprise-attack'))
 
     @staticmethod
     def valid_metadata_index(rule, index):
@@ -647,79 +685,6 @@ class Helper:
                 list_of_strings.insert(index + index + 1, ',')
 
         return list_of_strings
-
-    # This comes from 'https://gist.github.com/Neo23x0/577926e34183b4cedd76aa33f6e4dfa3' Cyb3rOps.
-    # There have been significant changes to this function to better generate a hash of the strings and conditions
-    @staticmethod
-    def calculate_rule_hash(rule):
-        """
-        Calculates a hash over the relevant YARA rule content (string contents, sorted condition)
-        Requires a YARA rule object as generated by 'plyara': https://github.com/plyara/plyara
-        :param rule: YARA rule object
-        :return hash: generated hash
-        """
-        hash_strings = []
-        condition_string_prefaces = ('$', '!', '#', '@')
-        # dictionary for substitutions
-        string_substitutions = {}
-        all_strings = []
-        # original code used md5
-        # m = hashlib.md5()
-        m = hashlib.sha3_256()
-        # Adding all string contents to the list
-        if 'strings' in rule:
-            for s in rule['strings']:
-                if s['type'] == 'byte':
-                    # original code just needed to append the converted hex code as a string.
-                    # We need to create the dictionary entries for substitutions as well
-                    # hash_strings.append(re.sub(r'[^a-fA-F?0-9]+', '', s['value']))
-                    byte_code_string = re.sub(r'[^a-fA-F?0-9]+', '', s['value'])
-                    dict_entry = {s['name']: byte_code_string}
-                    string_substitutions.update(dict_entry)
-                    hash_strings.append(byte_code_string)
-                else:
-                    # The following line was the only portion of this else statement in the original code
-                    # This change takes modifiers into account for string arguments
-                    # hash_strings.append(s['value'])
-                    string_and_modifiers = ['"' + s['value'] + '"']
-                    if 'modifiers' in s:
-                        modifiers = ' '.join(s['modifiers'])
-                        string_and_modifiers.append(modifiers)
-                    string_and_modifiers = ' '.join(string_and_modifiers)
-                    all_strings.append('$' + string_and_modifiers)
-                    dict_entry = {s['name']: string_and_modifiers}
-                    string_substitutions.update(dict_entry)
-                    # hash_strings.append('$' + string_and_modifiers)
-        all_strings = Helper.sort_strings_add_commas(all_strings)
-        # Adding the components of the condition to the list (except the variables)
-        all_wild_card_1 = r'\$\*'
-        all_wild_card_2 = r'them'
-        for e in rule['condition_terms']:
-            if re.match(all_wild_card_1, e) or re.match(all_wild_card_2, e):
-                hash_strings.extend(all_strings)
-            elif e.startswith(condition_string_prefaces):
-                if len(e) > 1:
-                    string_preface, string_name = e[:1], e[1:]
-                    string_name = '$' + string_name
-                    if e.endswith('*'):
-                        hash_strings.extend(Helper.sort_strings_add_commas(
-                            Helper.regex_match_string_names_for_values(string_preface, string_name,
-                                                                       string_substitutions)))
-                        # hash_strings.extend('Pull all the matching strings')
-                    else:
-                        if string_name in string_substitutions:
-                            substituted = string_preface + string_substitutions[string_name]
-                            hash_strings.append(substituted)
-                        else:
-                            hash_strings.append(e)
-                else:
-                    hash_strings.append(e)
-            else:
-                hash_strings.append(e)
-        # Generate a hash from the sorted contents
-        # hash_strings.sort()
-        m.update(''.join(hash_strings).encode('utf8'))
-        return m.hexdigest()
 
     @staticmethod
     def validate_date(date_to_validate):
@@ -788,18 +753,6 @@ class Helper:
             return malware_return
         elif tool_return:
             return tool_return
-
-    @staticmethod
-    def get_tactic_by_id(id_code):
-        """
-        Used if the id_code is prefaced with TA
-        :param id_code: The value of the mitre_att metadata value
-        :return: The return of the query of the MITRE ATT&CK database, null if there are no matches
-        """
-        return Helper.fs.query([
-            Filter('type', '=', 'x-mitre-tactic'),
-            Filter('external_references.external_id', '=', id_code)
-        ])
 
     @staticmethod
     def get_group_by_id(id_code):

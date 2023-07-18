@@ -1,0 +1,160 @@
+---
+description: "Validator Configuration File"
+version: 0.9
+rule_statuses:
+   -
+      value: 'TESTING'
+   -
+      value: 'RELEASED'
+   -
+      value: 'DEPRECATED'
+
+sharing_classifications:
+   -
+      value: 'TLP:CLEAR|TLP:CLEAR//COMMERCIAL|TLP:WHITE|TLP:WHITE//COMMERCIAL'
+   -
+      value: 'TLP:GREEN|TLP:GREEN//COMMERCIAL'
+   -
+      value: 'TLP:AMBER|TLP:AMBER//COMMERCIAL'
+   -
+      value: 'TLP:AMBER\+STRICT|TLP:AMBER\+STRICT//COMMERCIAL'
+
+category_types:
+   -
+      value: 'INFO'
+   -
+      value: 'EXPLOIT'
+   -
+      value: 'TECHNIQUE'
+   -
+      value: 'TOOL'
+   -
+      value: 'MALWARE'
+
+malware_types:
+   -
+      value: "ADWARE"
+      description: "Software that shows you extra promotions that you cannot control as you use your PC. You wouldn't see the extra ads if you didn't have adware installed."
+   -
+      value: "APT"
+      description: "Malware related to an Advanced Persistent Threat (APT) group."
+   -
+      value: "BACKDOOR"
+      description: "A backdoor Trojan gives malicious users remote control over the infected computer. They enable the author to do anything they wish on the infected computer including sending, receiving, launching and deleting files, displaying data and rebooting the computer. Backdoor Trojans are often used to unite a group of victim computers to form a botnet or zombie network that can be used for criminal purposes."
+   -
+      value: "BANKER"
+      description: "Trojan Banker programs are designed to steal your account data for online banking systems, e-payment systems and credit or debit cards."
+   -
+      value: "BOOTKIT"
+      description: "A malware variant that modifies the boot sectors of a hard drive, including the Master Boot Record (MBR) and Volume Boot Record (VBR)."
+   -
+      value: "BOT"
+      description: "A malicious bot is self-propagating malware designed to infect a host and connect back to a central server or servers that act as a command and control (C&C) center for an entire network of compromised devices, or botnet."
+   -
+      value: "BROWSER-HIJACKER"
+      description: "A browser hijacker is defined as a form of unwanted software that modifies a web browser's settings without the user's permission. The result is the placement of unwanted advertising into the browser, and possibly the replacement of an existing home page or search page with the hijacker page."
+   -
+      value: "BRUTEFORCER"
+      description: "Trojan bruteforcer are trying to brute force website in order to achieve something else (EX: Finding  WordPress websites with default credentials)."
+   -
+      value: "CLICKFRAUD"
+      description: "A type of trojan that can use your PC to 'click' on websites or applications. They are usually used to make money for a malicious hacker by clicking on online advertisements and making it look like the website gets more traffic than it does. They can also be used to skew online polls, install programs on your PC, or make unwanted software appear more popular than it is."
+   -
+      value: "CRYPTOMINER"
+      description: "Cryptocurrency mining malware."
+   -
+      value: "DDOS"
+      description: "These programs conduct DoS (Denial of Service) attacks against a targeted web address. By sending multiple requests from your computer and several other infected computers, the attack can overwhelm the target address leading to a denial of service."
+   -
+      value: "DOWNLOADER"
+      description: "Trojan Downloaders can download and install new versions of malicious programs in the target system."
+   -
+      value: "DROPPER"
+      description: "These programs are used by hackers in order to install malware or to prevent the detection of malicious programs."
+   -
+      value: "EXPLOITKIT"
+      description: "Exploit kits are programs that contain data or code that takes advantage of a vulnerability within an application that is running in the target system."
+   -
+      value: "FAKEAV"
+      description: "Trojan FakeAV programs simulate the activity of antivirus software. They are designed to extort money in return for the detection and removal of threat, even though the threats that they report are actually non-existent."
+   -
+      value: "HACKTOOL"
+      description: "A type of tool that can be used to allow and maintain unauthorized access to your PC."
+   -
+      value: "INFOSTEALER"
+      description: "A program that collects your personal information, such as your browsing history, and uses it without adequate consent."
+   -
+      value: "KEYLOGGER"
+      description: "A keylogger monitors and logs every keystroke it can identify. Once installed, the virus either keeps track of all the keys and stores the information locally, after which the hacker needs physical access to the computer to retrieve the information, or the logs are sent over the internet back to the hacker."
+   -
+      value: "LOADER"
+      description: "A program that loads another application / memory space."
+   -
+      value: "OBFUSCATOR"
+      description: "A type of malware that hides its code and purpose to make it more difficult for security software to detect or remove it."
+   -
+      value: "POS"
+      description: "Point-of-sale malware is usually a type of malware that is used by cybercriminals to target point of sale (POS) and payment terminals with the intent to obtain credit card and debit card information."
+   -
+      value: "PROXY"
+      description: "This type of trojan allows unauthorized parties to use the infected computer as a proxy server to access the Internet anonymously."
+   -
+      value: "RAT"
+      description: "A program that can be used by a remote hacker to gain access and control of an infected machine."
+   -
+      value: "RANSOMWARE"
+      description: "This type of malware can modify data in the target computer so the operating system will stop running correctly or the data is no longer accessible. The criminal will only restore the computer state or data after a ransom is paid to them (mostly using cryptocurrency)."
+   -
+      value: "REVERSE-PROXY"
+      description: "A reverse proxy is a server that receives requests from the internet and forwards them to a small set of servers."
+   -
+      value: "ROOTKIT"
+      description: "Rootkits are designed to conceal certain objects or activities in the system. Often their main purpose is to prevent malicious programs being detected in order to extend the period in which programs can run on an infected computer."
+   -
+      value: "SCANNER"
+      description: "This type of malware scan the internet / network(s) / system(s) / service(s) to collect information. That information could be used later to perpetuate an cyber attack."
+   -
+      value: "SCAREWARE"
+      description: "Scareware is a form of malware which uses social engineering to cause shock, anxiety, or the perception of a threat in order to manipulate users into buying unwanted software."
+   -
+      value: "SPAMMER"
+      description: "Malware that is sending spam."
+   -
+      value: "TROJAN"
+      description: "Generic or Unknown Trojan"
+   -
+      value: "VIRUS"
+      description: "A generic computer virus"
+   -
+      value: "WIPER"
+      description: "A type of malware that destroy the data."
+   -
+      value: "WEBSHELL"
+      description: "A web shell is a script that can be uploaded to a web server to enable remote administration of the machine."
+   -
+      value: "WORM"
+      description: "A type of malware that spreads to other PCs."
+
+actor_types:
+   -
+      value: "APT"
+   -
+      value: "CRIMEWARE"
+   -
+      value: "FIN"
+
+hash_types:
+   -
+      value: "[a-fA-F0-9]{32}"
+   -
+      value: "[a-fA-F0-9]{40}"
+   -
+      value: "[a-fA-F0-9]{64}"
+
+unvalidated_regex:
+   -
+      value: ".*"
+
+universal_regex:
+   -
+      value: '[^a-z]*'

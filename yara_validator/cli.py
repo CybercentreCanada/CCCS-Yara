@@ -2,27 +2,22 @@
 
 import argparse
 import re
-import sys
+import yaml
+
+from clint.textui import colored, puts
 from pathlib import Path
 from textwrap import dedent
+from yara_validator.constants import CONFIG_YAML_PATH as STANDARD_YAML_PATH
+from yara_validator.validator import run_yara_validator
 
-import yaml
-from clint.textui import colored, puts
 
-YARA_VALIDATOR_PATH = Path(__file__).resolve().parent / Path('yara-validator')
-if YARA_VALIDATOR_PATH not in sys.path:
-    sys.path.append(str(YARA_VALIDATOR_PATH))
-
-from yara_validator import run_yara_validator
-
-STANDARD_YAML_PATH = Path(__file__).resolve().parent / Path('CCCS_YARA.yml')
 YARA_FILENAME_REGEX = r'(\.yara|\.yar|\.rules)$'
 YARA_VALID_PREFIX = r'valid_'
 YARA_VALID_PREFIX_REG = re.compile(r'^' + YARA_VALID_PREFIX)
 OUTPUT_FILE_LIST = []
 
-# Defining the parser and arguments to parse so it be used both when called by the command line and with the git_ci
-# function.
+# Defining the parser and arguments to parse,
+# so it can be used both when called by the command line and with the git_ci function.
 parser = argparse.ArgumentParser(description='CCCS YARA script to run the CCCS YARA validator, '
                                              'use the -i or -c flags to generate the id, fingerprint, version, '
                                              'first_imported, or last_modified (if not already present) and add them '
@@ -33,10 +28,9 @@ parser.add_argument('-r', '--recursive', action='store_true', default=False, des
                     help='Recursively search folders provided.')
 parser.add_argument('-n', '--no-changes', action='store_true', default=False, dest='nochanges',
                     help='Makes no changes and outputs potential results to the output.')
-parser.add_argument('-v', '--verbose', action='store_true', default=False, dest='verbose',
-                    help='Verbose mode, will print why a rule was invalid.')
-parser.add_argument('-vv', '--very-verbose', action='store_true', default=False, dest='veryverbose',
-                    help='Very-verbose mode, will printout what rule is about to be processed, '
+parser.add_argument('-v', '--verbose', action='count', default=0, dest='verbose',
+                    help='Verbose mode, will print why a rule was invalid. '
+                         'Use twice for very verbose, will printout what rule is about to be processed, '
                          'the invalid rules, the reasons they are invalid and all contents of the rule.')
 parser.add_argument('-f', '--fail', action='store_true', default=False, dest='fail',
                     help='Fail mode, only prints messages about invalid rules.')
@@ -48,6 +42,12 @@ parser.add_argument('-st', '--strict', action='store_true', default=False, dest=
                     help='This causes the cli to return a non-zero exit code for warnings.')
 parser.add_argument('-m', '--module', action='store_false', default=True,
                     dest='module', help='This flag overrides the check for modules that have not been imported.')
+parser.add_argument('--validator_config', type=str, default=None, dest='validator_config',
+                    help='Path to YARA basic validation, i.e. validator_cfg.yml')
+parser.add_argument('--yara_config', type=str, default=None, dest='yara_config',
+                    help='Path to CCCS YARA configuration, i.e. CCCS_YARA.yml')
+parser.add_argument('--yara_config_values', type=str, default=None, dest='yara_configvalues',
+                    help='Path to CCCS YARA configuration values, i.e. CCCS_YARA_values.yml')
 
 parser_group = parser.add_mutually_exclusive_group()
 parser_group.add_argument('-i', '--in-place', action='store_true', default=False, dest='inplace',
@@ -98,7 +98,7 @@ def get_paths_to_validate(options_paths, recursive):
 
 
 def get_yara_file_new_path(path):
-    """ takes a path in argument, and return the same path with the 
+    """ takes a path in argument, and return the same path with the
         filename prefixed with YARA_VALID_PREFIX.
 
         if the file already has the prefix, returns the path unchanged.
@@ -175,7 +175,7 @@ def __call_validator(options):
     # main loop : will iterate over every file the program has to validate,
     #             validate them and then print the output
     for yara_rule_path in list(paths_to_validate):
-        if options.veryverbose:
+        if options.verbose >= 2:
             print('{message:40}{y_file}'.format(
                 message='Validating Rule file:',
                 y_file=yara_rule_path,
@@ -195,8 +195,8 @@ def __call_validator(options):
             what_will_be_done = 'make no changes'
             yara_file_output = None
 
-        yara_file_processor = run_yara_validator(yara_rule_path, generate_values, options.module)
-
+        yara_file_processor = run_yara_validator(yara_rule_path, generate_values, options.module,
+                                                 options.yara_config, options.yara_configvalues, options.validator_config)
 
         # Prints the output of the validator.
         file_message = '{message:39}{y_file}'
@@ -211,7 +211,7 @@ def __call_validator(options):
             if options.nochanges:
                 print('     - Would {message}'.format(message=what_will_be_done))
 
-            if options.verbose or options.veryverbose:
+            if options.verbose:
                 print_errors(yara_file_processor, options)
                 print_warnings(yara_file_processor, options)
 
@@ -225,7 +225,7 @@ def __call_validator(options):
                 y_file=yara_rule_path
             )))
 
-            if options.verbose or options.veryverbose:
+            if options.verbose:
                 print_warnings(yara_file_processor, options)
 
         elif not yara_file_processor.return_file_error_state():
@@ -246,7 +246,7 @@ def __call_validator(options):
             print('Danger Will Robinson! Danger!'
                   'Seriously though, how on earth did you get here???')
 
-    if options.veryverbose:
+    if options.verbose >= 2:
         for invalid_rule_path, invalid_rule_return in all_invalid_rule_returns:
             print(dedent('''
             ----------------------------------------------------------------------------
@@ -273,9 +273,9 @@ def __call_validator(options):
     ----------------------------------------------------------------------------
     All .yara Rule files found have been passed through the CCCS Yara Validator:
         Total Yara Rule Files to Analyze:     {total_yara_rule_paths}
-        Total Valid CCCS Yara Rule Files:     {total_valid_yara_rule_paths} 
+        Total Valid CCCS Yara Rule Files:     {total_valid_yara_rule_paths}
         Total Warning CCCS Yara Rule Files:   {total_warning_yara_rule_paths}
-        Total Invalid CCCS Yara Rule Files:   {total_invalid_yara_rule_paths} 
+        Total Invalid CCCS Yara Rule Files:   {total_invalid_yara_rule_paths}
     ---------------------------------------------------------------------------
     ''').format(total_yara_rule_paths=str(total_yara_rule_paths),
                 total_valid_yara_rule_paths=colored.green(str(total_valid_yara_rule_paths)),
@@ -295,11 +295,11 @@ def git_ci(changed_file_paths):
 
 def main():
     print('''\
-      ____ ____ ____ ____   __   __ _    ____      _    
-     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \   
-    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \  
-    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \ 
-     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\ 
+      ____ ____ ____ ____   __   __ _    ____      _
+     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \\
+    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \\
+    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \\
+     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\\
      ''')
 
     options = parse_args()
