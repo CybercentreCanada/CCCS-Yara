@@ -10,13 +10,15 @@ rule_statuses:
       value: 'DEPRECATED'
 
 sharing_classifications:
-   - 
-      value: 'TLP:WHITE|TLP:WHITE//COMMERCIAL'
+   -
+      value: 'TLP:CLEAR|TLP:CLEAR//COMMERCIAL|TLP:WHITE|TLP:WHITE//COMMERCIAL'
    -
       value: 'TLP:GREEN|TLP:GREEN//COMMERCIAL'
    -
       value: 'TLP:AMBER|TLP:AMBER//COMMERCIAL'
- 
+   -
+      value: 'TLP:AMBER\+STRICT|TLP:AMBER\+STRICT//COMMERCIAL'
+
 category_types:
    -
       value: 'INFO'
@@ -143,11 +145,11 @@ actor_types:
 
 hash_types:
    -
-      value: "(?i)[a-f0-9]{32}"
+      value: "[a-fA-F0-9]{32}"
    -
-      value: "(?i)[a-f0-9]{40}"
+      value: "[a-fA-F0-9]{40}"
    -
-      value: "(?i)[a-f0-9]{64}"
+      value: "[a-fA-F0-9]{64}"
 
 unvalidated_regex:
    -
