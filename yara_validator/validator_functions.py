@@ -621,9 +621,8 @@ class Helper:
         print(f'Unable to find STIX data on {MITRE_STIX_DATA_PATH}. Cloning..')
 
         os.makedirs(MITRE_STIX_DATA_PATH)
-        repo = Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH, depth=1)
-        repo.git.checkout('ATT&CK-v13.1')  # 2b248218b6bce57a0213fccf352b9a5aa4e4072f
-
+        repo = Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH, depth=1,
+                               branch="ATT&CK-v13.1")
     fs = FileSystemSource(os.path.join(MITRE_STIX_DATA_PATH, 'enterprise-attack'))
 
     @staticmethod
