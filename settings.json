@@ -1,8 +1,8 @@
 {
     "yara.metaEntries": {
         "version": "1.0",
-        "creation_date": "${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
-        "last_modified": "${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+        "date": "${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+        "modified": "${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
         "status": "TESTING|RELEASED|DEPRECATED",
         "sharing": "TLP:AMBER",
         "source": "CCCS",
@@ -16,7 +16,7 @@
         "report": "TA20-0192",
         "reference": "https://cccs/report.html",
         "hash": "d9fcd5af3564d87dc22f1e72763a7959",
-        "yara_version": "4.2"
+        "minimum_yara": "4.2"
     },
     "yara.sortMeta": false
 }
