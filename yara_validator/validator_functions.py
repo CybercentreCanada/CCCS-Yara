@@ -19,18 +19,26 @@ BASE62_REGEX = r'^[0-9a-zA-z]+$'
 UNIVERSAL_REGEX = r'^[^a-z]*$'
 MITRE_GROUP_NAME = 'name'
 CHILD_PLACE_HOLDER = 'child_place_holder'
-DATE_FORMATS = ["%Y-%m", "%Y.%m", "%Y/%m",
-                "%m/%d/%Y", "%m/%d/%y", "%d/%m/%Y", "%d/%m/%y",
-                "%d-%m-%Y", "%m-%d-%Y", "%m-%d-%y", "%Y-%m-%d",
-                "%d.%m.%Y", "%m.%d.%Y", "%m.%d.%y", "%Y.%m.%d",
-                "%f/%e/%Y", "%f/%e/%y", "%e/%f/%Y", "%e/%f/%y",
-                "%f-%e-%Y", "%f-%e-%y", "%e-%f-%Y", "%e-%f-%y",
-                "%f.%e.%Y", "%f.%e.%y", "%e.%f.%Y", "%e.%f.%y",
-                "%b %e, %Y", "%B %e, %Y",
-                "%b %d, %Y", "%B %d, %Y",
-                "%b %e %Y", "%B %e %Y", "%e %b %Y", "%e %B %Y",
-                "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y",
-                "%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %I:%M:%S %p"]
+DATE_FORMATS = [
+    "%Y-%m", "%Y.%m", "%Y/%m",
+    "%m/%d/%Y", "%d/%m/%Y",
+    "%m/%d/%y", "%d/%m/%y",
+    "%Y/%d/%m", "%y/%d/%m",
+    "%Y/%m/%d", "%y/%m/%d",
+    "%Y.%d.%m", "%y.%d.%m",
+    "%Y.%m.%d", "%y.%m.%d",
+    "%d-%m-%Y", "%m-%d-%Y", "%m-%d-%y", "%Y-%m-%d",
+    "%d.%m.%Y", "%m.%d.%Y", "%m.%d.%y", "%Y.%m.%d",
+    "%f/%e/%Y", "%f/%e/%y", "%e/%f/%Y", "%e/%f/%y",
+    "%f-%e-%Y", "%f-%e-%y", "%e-%f-%Y", "%e-%f-%y",
+    "%f.%e.%Y", "%f.%e.%y", "%e.%f.%Y", "%e.%f.%y",
+    "%b %e, %Y", "%B %e, %Y",
+    "%b %d, %Y", "%B %d, %Y",
+    "%b %e %Y", "%B %e %Y", "%e %b %Y", "%e %B %Y",
+    "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y",
+    "%Y-%m-%d %I:%M:%S %p", "%Y/%m/%d %I:%M:%S %p"
+    "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"
+]
 
 
 # potential values of MetadataAttributes.optional variable
