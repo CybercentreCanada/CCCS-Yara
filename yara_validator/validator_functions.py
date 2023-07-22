@@ -19,18 +19,26 @@ BASE62_REGEX = r'^[0-9a-zA-z]+$'
 UNIVERSAL_REGEX = r'^[^a-z]*$'
 MITRE_GROUP_NAME = 'name'
 CHILD_PLACE_HOLDER = 'child_place_holder'
-DATE_FORMATS = ["%Y-%m", "%Y.%m", "%Y/%m",
-                "%m/%d/%Y", "%m/%d/%y", "%d/%m/%Y", "%d/%m/%y",
-                "%d-%m-%Y", "%m-%d-%Y", "%m-%d-%y", "%Y-%m-%d",
-                "%d.%m.%Y", "%m.%d.%Y", "%m.%d.%y", "%Y.%m.%d",
-                "%f/%e/%Y", "%f/%e/%y", "%e/%f/%Y", "%e/%f/%y",
-                "%f-%e-%Y", "%f-%e-%y", "%e-%f-%Y", "%e-%f-%y",
-                "%f.%e.%Y", "%f.%e.%y", "%e.%f.%Y", "%e.%f.%y",
-                "%b %e, %Y", "%B %e, %Y",
-                "%b %d, %Y", "%B %d, %Y",
-                "%b %e %Y", "%B %e %Y", "%e %b %Y", "%e %B %Y",
-                "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y",
-                "%Y-%m-%d %I:%M:%S %p", "%Y-%m-%d %I:%M:%S %p"]
+DATE_FORMATS = [
+    "%Y-%m", "%Y.%m", "%Y/%m",
+    "%m/%d/%Y", "%d/%m/%Y",
+    "%m/%d/%y", "%d/%m/%y",
+    "%Y/%d/%m", "%y/%d/%m",
+    "%Y/%m/%d", "%y/%m/%d",
+    "%Y.%d.%m", "%y.%d.%m",
+    "%Y.%m.%d", "%y.%m.%d",
+    "%d-%m-%Y", "%m-%d-%Y", "%m-%d-%y", "%Y-%m-%d",
+    "%d.%m.%Y", "%m.%d.%Y", "%m.%d.%y", "%Y.%m.%d",
+    "%f/%e/%Y", "%f/%e/%y", "%e/%f/%Y", "%e/%f/%y",
+    "%f-%e-%Y", "%f-%e-%y", "%e-%f-%Y", "%e-%f-%y",
+    "%f.%e.%Y", "%f.%e.%y", "%e.%f.%Y", "%e.%f.%y",
+    "%b %e, %Y", "%B %e, %Y",
+    "%b %d, %Y", "%B %d, %Y",
+    "%b %e %Y", "%B %e %Y", "%e %b %Y", "%e %B %Y",
+    "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y",
+    "%Y-%m-%d %I:%M:%S %p", "%Y/%m/%d %I:%M:%S %p"
+    "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"
+]
 
 
 # potential values of MetadataAttributes.optional variable
@@ -168,6 +176,11 @@ class Validators:
             False if the value is does not match the expression
         """
         value = list(rule_to_validate[METADATA][metadata_index].values())[0]
+
+        if METADATA == 'hash':
+            # Strip any whitespace before validation
+            value = str(value).strip()
+            rule_to_validate[METADATA].insert(metadata_index, {METADATA: value})
 
         self.required_fields[metadata_key].attributefound()
         self.required_fields_index[self.required_fields[metadata_key].position].increment_count()
@@ -376,46 +389,6 @@ class Validators:
             soft_codes_found.append(mitre_att_to_validate)
 
         return self.required_fields[MITRE_ATT].valid
-
-    def valid_al_config_dumper(self, rule_to_validate_al_config_d, metadata_index, metadata_key, alias=None):
-        """
-        Makes the al_config_parser metadata value required if this is found first.
-        :param rule_to_validate_al_config_d: the plyara parsed rule that is being validated
-        :param metadata_index: used to reference what the array index of the actor metadata value is
-        :param metadata_key: the name of the metadata value that is being processed
-        :return: True all the time because the value is never verified...
-        """
-        AL_CONFIG_D = metadata_key
-        self.required_fields[AL_CONFIG_D].attributefound()
-        self.required_fields_index[self.required_fields[AL_CONFIG_D].position].increment_count()
-
-        # Because there is an al_config_dumper al_config_parser becomes required
-        self.required_fields[AL_CONFIG_D].optional = MetadataOpt.REQ_PROVIDED
-
-        # Because we are not validating the value... So much pain!
-        self.required_fields[AL_CONFIG_D].attributevalid()
-
-        return self.required_fields[AL_CONFIG_D].valid
-
-    def valid_al_config_parser(self, rule_to_validate_al_config_p, metadata_index, metadata_key, alias=None):
-        """
-        Makes the al_config_dumper metadata value required if this is found first.
-        :param rule_to_validate_al_config_p: the plyara parsed rule that is being validated
-        :param metadata_index: used to reference what the array index of the actor metadata value is
-        :param metadata_key: the name of the metadata value that is being processed
-        :return: True all the time because the value is never verified...
-        """
-        AL_CONFIG_P = metadata_key
-        self.required_fields[AL_CONFIG_P].attributefound()
-        self.required_fields_index[self.required_fields[AL_CONFIG_P].position].increment_count()
-
-        # Because there is an al_config_parser al_config_dumper becomes required
-        self.required_fields[AL_CONFIG_P].optional = MetadataOpt.REQ_PROVIDED
-
-        # Because we are not validating the value... So much pain!
-        self.required_fields[AL_CONFIG_P].attributevalid()
-
-        return self.required_fields[AL_CONFIG_P].valid
 
     def valid_category(self, rule_to_validate_category, metadata_index, metadata_key, alias=None):
         """
