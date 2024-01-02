@@ -37,6 +37,7 @@ class YaraFileProcessor:
 
         # Plyara object for parsing the yara rule file
         parser = plyara.Plyara()
+        parser.STRING_ESCAPE_CHARS.add("r")
         file_name = ''
         # This block attempts to read the file as utf-8. If there are any issues with the file format or reading
         #   the file it creates a yara_rule object and sets the error state
