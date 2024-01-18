@@ -58,13 +58,13 @@ rule MemoryModule {
 
 ## Components
 
-yara_validator.py: This is the validator library. It is used to validate the metadata section of YARA rules. It verifies specified metadata information, auto-generates some of metadata information and re-sorts the metadata information into the canonical order with all 'unknown' metadata information appended to the bottom.
+validator.py: This is the validator library. It is used to validate the metadata section of YARA rules. It verifies specified metadata information, auto-generates some of metadata information and re-sorts the metadata information into the canonical order with all 'unknown' metadata information appended to the bottom.
 
 - [CCCS_YARA.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml): This is the definition of the CCCS YARA Standard in the YAML format. (Limitation: This file is provided to show what fields are expected, currently the yara_validator doeSn't use this file directly, this will be addressed in a future release.)
 
 - [CCCS_YARA_values.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA_values.yml): File which describe the list of acceptable values for fields defined in the CCCS_YARA.yml
 
-yara_validator_cli.py: This is a command line interface utility. It takes a file, list of files, a folder looking for files with the .yar or .yara extension.
+yara_validator: This is a command line interface utility. It takes a file, list of files, a folder looking for files with the .yar or .yara extension.
 
 ## Requirements
 
@@ -80,17 +80,17 @@ cd CCCS-Yara
 pip install  .
 ```
 
-## yara_validator_cli.py usage
+## yara_validator usage
 
 ```
-yara_validator_cli.py -h
+yara_validator -h
      ____ ____ ____ ____   __   __ _    ____      _
     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
 
-usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
+usage: yara_validator [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
                              [-m] [-i | -c]
                              paths [paths ...]
 
@@ -128,7 +128,7 @@ Quick example:
 
 ```
 # Rule will be converted inline
-python yara_validator_cli.py -v -i <path>
+python yara_validator -v -i <path>
 ```
 
 # Centre canadien pour la cybersécurité
@@ -186,13 +186,13 @@ rule MemoryModule {
 
 ## Composantes
 
-yara_validator.py: La librairie de validation. Elle permet de vérifier si une règle YARA a tous les attributs nécessaires, elle auto-génère aussi certain attribut et les ordonnent selon l'ontologie. Tous les attributs supplémentaires ne faisant pas partie de la spécification sont placé à la fin.
+validator.py: La librairie de validation. Elle permet de vérifier si une règle YARA a tous les attributs nécessaires, elle auto-génère aussi certain attribut et les ordonnent selon l'ontologie. Tous les attributs supplémentaires ne faisant pas partie de la spécification sont placé à la fin.
 
 - [CCCS_YARA.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml): Fichier de de définition de la spécification. (Limitation: Ce fichier démontre les attributs nécessaires, présentement le validateur n'utilise pas se fichier directement, ceci sera améliorer dans le futur.)
 
 - [CCCS_YARA_values.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA_values.yml): Fichier qui décrit les valeurs acceptables pour chacun des attributs définit dans CCCS_YARA.yml.
 
-yara_validator_cli.py: Utilitaire de validation pour la ligne de commande. Il accepte une règle, une liste de règles ou un dossier pour validé les fichiers se terminant par .yar ou .YARA.
+yara_validator: Utilitaire de validation pour la ligne de commande. Il accepte une règle, une liste de règles ou un dossier pour validé les fichiers se terminant par .yar ou .YARA.
 
 ## Exigences
 
@@ -208,17 +208,17 @@ cd CCCS-Yara
 pip install  .
 ```
 
-## yara_validator_cli.py en ligne de commandes
+## yara_validator en ligne de commandes
 
 ```
-yara_validator_cli.py -h
+yara_validator -h
      ____ ____ ____ ____   __   __ _    ____      _
     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
 
-usage: yara_validator_cli.py [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
+usage: yara_validator [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
                              [-m] [-i | -c]
                              paths [paths ...]
 
