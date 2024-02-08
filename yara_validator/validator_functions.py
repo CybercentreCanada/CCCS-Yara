@@ -1,4 +1,5 @@
 import datetime  # for date checking function
+import os
 import re
 import uuid
 from enum import Enum
@@ -6,11 +7,9 @@ from pathlib import Path
 
 import baseconv  # for the UUID
 import packaging.version
-import stix2.exceptions
-from stix2 import FileSystemSource
-from stix2 import Filter
 import plyara.utils
-
+import stix2.exceptions
+from stix2 import FileSystemSource, Filter
 from yara_validator.constants import MITRE_STIX_DATA_PATH
 from yara_validator.stix2_patch.filter_casefold import FilterCasefold
 
@@ -586,16 +585,30 @@ class Validators:
                 self.required_fields_index[self.required_fields[MITRE_ATT].position].increment_count()
 
 
-class Helper:
-    import os
-    if not os.path.exists(MITRE_STIX_DATA_PATH):
-        from git import Repo
-        print(f'Unable to find STIX data on {MITRE_STIX_DATA_PATH}. Cloning..')
+# Create a class with the same interface as stix2.FileSystemSource
+class MITRE_FileSystemSource:
+    def __init__(self) -> None:
+        if not os.path.exists(MITRE_STIX_DATA_PATH):
+            from git import Repo
+            print(f'Unable to find STIX data on {MITRE_STIX_DATA_PATH}. Cloning..')
 
-        os.makedirs(MITRE_STIX_DATA_PATH)
-        repo = Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH, depth=1,
-                               branch="ATT&CK-v13.1")
-    fs = FileSystemSource(os.path.join(MITRE_STIX_DATA_PATH, 'enterprise-attack'))
+            os.makedirs(MITRE_STIX_DATA_PATH)
+            Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH, depth=1,
+                            branch="ATT&CK-v13.1")
+
+        # Make all subdirectories query-able
+        self.fs_list = [FileSystemSource(os.path.join(MITRE_STIX_DATA_PATH, d))
+                        for d in os.listdir(MITRE_STIX_DATA_PATH) if d.endswith("-attack")]
+
+    def query(self, query: list):
+        for fs in self.fs_list:
+            r = fs.query(query)
+            if r:
+                return r
+
+
+class Helper:
+    fs = MITRE_FileSystemSource()
 
     @staticmethod
     def valid_metadata_index(rule, index):
