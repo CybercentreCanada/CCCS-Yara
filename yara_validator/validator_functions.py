@@ -321,7 +321,7 @@ class Validators:
                     # Date isn't in the expected format, let's see if we can convert it
                     success, formatted_date = convert_date(date)
                     if success and Helper.validate_date(formatted_date):
-                        self.required_fields[DATE].attibutevalid()
+                        self.required_fields[DATE].attributevalid()
                         update_metadata(date, force=True)
                     else:
                         self.required_fields[DATE].attributeinvalid()
