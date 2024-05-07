@@ -139,7 +139,7 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
             .format(str(validator_configuration.get(STRING_ENCODING).get(VALUE)))
         yara_file_processor.update_file_error(True, str(yara_file_processor.original_rule_file.name), file_response)
         return yara_file_processor
-    
+
     with open(CONFIG_VALUES_YAML_PATH, 'r', encoding='utf8') as yaml_file:
         scheme = yaml.safe_load(yaml_file)
 
@@ -150,10 +150,8 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
 
     for rule in yara_file_processor.yara_rules:
         try:
+            validator.reset()
             rule.add_rule_return(validator.validation(rule.rule_plyara, rule.rule_string, generate_values))
-            # reset the counter here since we are evaluating 'per rule' 
-            for key, value in validator.required_fields.items():
-                validator.required_fields_index[value.position].count = 0
         except Exception as e:
             raise Exception(
                 f"{rule.rule_plyara.get('rule_name', None)} produced the following exception: {str(e)}. Halting validation..")
@@ -418,6 +416,13 @@ class YaraValidator:
         ]
 
     previous_position_values = None
+
+    def reset(self):
+        # Reset back to factory settings for required field validation
+        for value in self.required_fields.values():
+            self.required_fields_index[value.position].count = 0
+            value.found = False
+            value.valid = False
 
     def reindex_metadata_keys(self):
         """
@@ -910,4 +915,3 @@ class YaraValidator:
         # check if any metadata in child-parent relationship are missing
         self.validate_child_parent_metadata(self.yara_config, metadata_in_child_parent_relationship)
         self.metadata_keys_regex = self.metadata_keys_regex[:-1]
-
