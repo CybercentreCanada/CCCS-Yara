@@ -26,6 +26,8 @@ DATE_FORMATS = [
     "%Y/%m/%d", "%y/%m/%d",
     "%Y.%d.%m", "%y.%d.%m",
     "%Y.%m.%d", "%y.%m.%d",
+    "%Y%d%m", "%y%d%m",
+    "%Y%m%d", "%y%m%d",
     "%d-%m-%Y", "%m-%d-%Y", "%m-%d-%y", "%Y-%m-%d",
     "%d.%m.%Y", "%m.%d.%Y", "%m.%d.%y", "%Y.%m.%d",
     "%f/%e/%Y", "%f/%e/%y", "%e/%f/%Y", "%e/%f/%y",
@@ -98,6 +100,8 @@ def convert_date(date):
             parsed_date = datetime.datetime.strptime(date, datetime_format)
             return True, parsed_date.strftime("%Y-%m-%d")
         except ValueError:
+            continue
+        except Exception:
             continue
     return False, date
 
