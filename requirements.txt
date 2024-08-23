@@ -1,7 +1,7 @@
 clint>=0.5.1
 GitPython>=3.1.0
 packaging>=19.0
-git+https://github.com/cccs-rs/plyara.git
+plyara @ git+https://github.com/cccs-rs/plyara.git@a43f581e84deb71830ed24f1b915dc28269e17dd
 python-baseconv>=1.2.2
 PyYAML>=5.1
 stix2>=2.1.0
