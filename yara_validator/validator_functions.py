@@ -598,7 +598,7 @@ class MITRE_FileSystemSource:
 
             os.makedirs(MITRE_STIX_DATA_PATH)
             Repo.clone_from('https://github.com/mitre/cti.git', to_path=MITRE_STIX_DATA_PATH, depth=1,
-                            branch="ATT&CK-v15.1")
+                            branch="ATT&CK-v16.1")
 
         # Make all subdirectories query-able
         self.fs_list = [FileSystemSource(os.path.join(MITRE_STIX_DATA_PATH, d))
