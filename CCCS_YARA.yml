@@ -26,7 +26,7 @@
 #        - Optional | optional: this metadata metadata is required by the program but optional in metadata
 #                               (validator must auto-generate this metadata if missing from the YARA rule)
 #                               (currently only supported by "valid_uuid", "valid_fingerprint", "valid_version",
-#                                                                 "valid_first_imported" and "valid_last_modified")
+#                                                                 and "valid_modified")
 #  -> validator:
 #        - <name of validator function defined in "validator_functions.py">: this function will be called to validate the metadata
 #  -> argument:

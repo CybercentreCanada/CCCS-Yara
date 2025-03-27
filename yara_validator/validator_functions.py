@@ -298,7 +298,7 @@ class Validators:
             date if none was found and if the potential default metadata index would be out of bounds appends
             a generated date
         :param rule_to_date_check: the plyara parsed rule that is being validated
-        :param metadata_index: used to reference what the array index of the last_modified metadata value is
+        :param metadata_index: used to reference what the array index of the modified metadata value is
         :param metadata_key: the name of the metadata value that is being processed
         :return: True if the value matches the valid date format and False if it does not match it
         """

@@ -20,7 +20,7 @@ OUTPUT_FILE_LIST = []
 # so it can be used both when called by the command line and with the git_ci function.
 parser = argparse.ArgumentParser(description='CCCS YARA script to run the CCCS YARA validator, '
                                              'use the -i or -c flags to generate the id, fingerprint, version, '
-                                             'first_imported, or last_modified (if not already present) and add them '
+                                             ', or modified (if not already present) and add them '
                                              'to the file.')
 parser.add_argument('paths', nargs='+', type=str, default=[],
                     help='A list of files or folders to be analyzed.')

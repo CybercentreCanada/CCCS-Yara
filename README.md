@@ -95,7 +95,7 @@ usage: yara_validator [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
                              paths [paths ...]
 
 CCCS YARA script to run the CCCS YARA validator, use the -i or -c flags to
-generate the id, fingerprint, version, first_imported, or last_modified (if
+generate the id, fingerprint, version, or modified (if
 not already present) and add them to the file.
 
 positional arguments:
@@ -223,7 +223,7 @@ usage: yara_validator [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
                              paths [paths ...]
 
 CCCS YARA script to run the CCCS YARA validator, use the -i or -c flags to
-generate the id, fingerprint, version, first_imported, or last_modified (if
+generate the id, fingerprint, version, or modified (if
 not already present) and add them to the file.
 
 positional arguments:
