@@ -3,6 +3,7 @@ import os
 import re
 import uuid
 from enum import Enum
+from sys import version_info
 
 import baseconv  # for the UUID
 import packaging.version
@@ -244,7 +245,11 @@ class Validators:
         self.required_fields[FINGERPRINT].attributefound()
         self.required_fields_index[self.required_fields[FINGERPRINT].position].increment_count()
 
-        rule_hash = plyara.utils.generate_hash(rule_to_generate_id, legacy=True)
+        if version_info >= (3, 10):
+            rule_hash = plyara.utils.generate_hash(rule_to_generate_id, legacy=True)
+        else:
+            rule_hash = plyara.utils.generate_hash(rule_to_generate_id)
+
         if rule_hash:
             rule_id = {FINGERPRINT: rule_hash}
             if Helper.valid_metadata_index(rule_to_generate_id, metadata_index):
