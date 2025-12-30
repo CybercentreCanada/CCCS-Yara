@@ -2,6 +2,8 @@ import os
 import re
 
 WORKING_DIR = os.environ.get("WORKING_DIR", os.path.join(os.path.dirname(__file__), "./working_dir"))
+if not os.path.exists(WORKING_DIR):
+    os.makedirs(WORKING_DIR)
 
 BASE62_REGEX = re.compile(r"^[0-9a-zA-Z]+$")
 SHA256_REGEX = re.compile(r"^[a-fA-F0-9]{64}$")

@@ -101,24 +101,6 @@ class RuleValidatorModel(BaseModel, extra="allow"):
                             else:
                                 data[target_field].add(data.pop(key))
 
-                            # if isinstance(data[target_field], list):
-                            #     if isinstance(data[key], list):
-                            #         data[target_field].extend(data.pop(key))
-                            #     else:
-                            #         data[target_field].append(data.pop(key))
-                            # elif isinstance(data[key], set):
-                            #     data[target_field] = [data[target_field]] + list(data.pop(key))
-                            # else:
-                            #     # Convert to list if not already
-                            #     existing_value = data.pop(target_field)
-                            #     if key not in data and target_field == key:
-                            #         # Just convert field data to  list
-                            #         data[target_field] = [existing_value]
-                            #     elif isinstance(data[key], list):
-                            #         data[target_field] = [existing_value] + data.pop(key)
-                            #     else:
-                            #         data[target_field] = [existing_value, data.pop(key)]
-
         # Apply default metadata if provided
         default_metadata = info.context.get("default_metadata", {})
         for key, value in default_metadata.items():
