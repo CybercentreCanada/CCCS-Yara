@@ -3,3 +3,5 @@ build
 *.pyc
 *.egg
 cti
+working_dir/
+__pycache__/
