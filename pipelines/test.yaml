@@ -28,6 +28,7 @@ jobs:
           [ ! -d "$(pwd)/tests" ] && echo "No tests found" && exit
           [ -f $(pwd)/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
           [ -f $(pwd)/tests/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/tests/requirements.txt
+          sudo env "PATH=$PATH" python -m pip install -e .
           sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
 
         displayName: Setup environment
