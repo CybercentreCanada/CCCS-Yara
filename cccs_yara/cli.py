@@ -146,6 +146,14 @@ def execute_command(options):
             for rule, errors in validate_yara_rule(
                 yara_rule_content, validator_model=validator_model, default_metadata=default_metadata
             )[::-1]:
+                total_yara_rules_analyzed += 1
+                # If ignoring private rules and the rule is private, skip validation
+                if options.ignore_private_rules and "private" in rule.get("scopes", []):
+                    logger.warning(
+                        f"{COLOUR_WARNING}   Skipping Private Rule: {yara_rule_path}:{rule['rule_name']}{COLOUR_ENDC}"
+                    )
+                    continue
+
                 if errors and enricher:
                     rule["metadata_kv"] = rule.get("original_kv", {}).copy()
                     enricher.enrich_yara_rule(rule)
@@ -153,7 +161,6 @@ def execute_command(options):
                         rule, validator_model=validator_model, default_metadata=default_metadata
                     )[0]
 
-                total_yara_rules_analyzed += 1
                 # Here you can handle each rule and its associated errors
                 if errors:
                     all_invalid_rule_returns.append((yara_rule_path, errors))
@@ -267,6 +274,18 @@ def main():
         dest="validator",
         help="Path to Pydantic model configuration, i.e. yara_validator.validator:RuleValidatorModel",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        choices=["INFO", "DEBUG", "WARN", "ERROR"],
+        default="ERROR",
+        dest="verbose",
+        help="Control the verbosity of logging output. Options are INFO, DEBUG, WARN, ERROR. "
+        "Default is ERROR to track only errors. "
+        "WARN to track warnings and errors such as proposed changes. "
+        "INFO to track high-level processing information. "
+        "DEBUG to track detailed debugging information.",
+    )
 
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
 
@@ -286,18 +305,6 @@ def main():
         default=False,
         dest="recursive",
         help="Recursively search folders provided.",
-    )
-    validate_command.add_argument(
-        "-v",
-        "--verbose",
-        choices=["INFO", "DEBUG", "WARN", "ERROR"],
-        default="ERROR",
-        dest="verbose",
-        help="Control the verbosity of logging output. Options are INFO, DEBUG, WARN, ERROR. "
-        "Default is ERROR to track only errors. "
-        "WARN to track warnings and errors such as proposed changes. "
-        "INFO to track high-level processing information. "
-        "DEBUG to track detailed debugging information.",
     )
     validate_command.add_argument(
         "-e",
@@ -325,7 +332,13 @@ def main():
         "Options are 'inplace' to modify files in place and "
         "'createfile' to write validated rules to new files named after the rule.",
     )
-
+    validate_command.add_argument(
+        "--ignore-private-rules",
+        action="store_true",
+        default=False,
+        dest="ignore_private_rules",
+        help="Ignore private rules during validation.",
+    )
     args = parser.parse_args()
     if not args.command:
         # If no command is provided, print help message
