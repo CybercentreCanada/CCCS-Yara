@@ -35,8 +35,9 @@ def transform_date(date_str: str) -> str:
             # Convert the date string to a standardized format
             parsed_date = datetime.strptime(date_str, date_format)
             return parsed_date.strftime("%Y-%m-%d")
-        except ValueError:
+        except Exception:
             continue
+
     raise ValueError(f"Date '{date_str}' is not in a recognized format.")
 
 
@@ -109,10 +110,9 @@ class RuleValidatorModel(BaseModel, extra="allow"):
 
         # Insert a description based on the derived metadata if missing
         if "description" not in data or not data["description"]:
-            data["original_description"] = None
             description = "Detects "
             if data.get("malware"):
-                description += f"{', '.join(data['malware'])} samples"
+                description += f"{', '.join(data['malware'])} samples "
             else:
                 description += "samples "
             if data.get("actor"):
@@ -214,7 +214,7 @@ class RuleValidatorModel(BaseModel, extra="allow"):
 
     @field_validator("info")
     def validate_info(cls, v, info: ValidationInfo):
-        if info.data["category"] != "INFO":
+        if info.data.get("category") != "INFO":
             raise ValueError("The 'info' field can only be set if the category is 'INFO'.")
         return v
 
@@ -230,7 +230,7 @@ class RuleValidatorModel(BaseModel, extra="allow"):
 
     @field_validator("exploit")
     def validate_exploit(cls, v, info: ValidationInfo):
-        if info.data["category"] != "EXPLOIT":
+        if info.data.get("category") != "EXPLOIT":
             raise ValueError("The 'exploit' field can only be set if the category is 'EXPLOIT'.")
         return v
 
@@ -246,7 +246,7 @@ class RuleValidatorModel(BaseModel, extra="allow"):
 
     @field_validator("technique")
     def validate_technique(cls, v, info: ValidationInfo):
-        if info.data["category"] != "TECHNIQUE":
+        if info.data.get("category") != "TECHNIQUE":
             raise ValueError("The 'technique' field can only be set if the category is 'TECHNIQUE'.")
         return v
 
@@ -262,7 +262,7 @@ class RuleValidatorModel(BaseModel, extra="allow"):
 
     @field_validator("tool")
     def validate_tool(cls, v, info: ValidationInfo):
-        if info.data["category"] != "TOOL":
+        if info.data.get("category") != "TOOL":
             raise ValueError("The 'tool' field can only be set if the category is 'TOOL'.")
         return v
 
@@ -278,7 +278,7 @@ class RuleValidatorModel(BaseModel, extra="allow"):
 
     @field_validator("malware")
     def validate_malware(cls, v, info: ValidationInfo):
-        if info.data["category"] != "MALWARE":
+        if info.data.get("category") != "MALWARE":
             raise ValueError("The 'malware' field can only be set if the category is 'MALWARE'.")
         return v
 

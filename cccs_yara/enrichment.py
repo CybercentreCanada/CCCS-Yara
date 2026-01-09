@@ -141,6 +141,10 @@ class Enricher:
                                 result["external_references"][0]["external_id"]
                             )
 
+            elif key == "malware_type":
+                # If malware type has been determined, set category to MALWARE
+                parsed_rule["metadata_kv"]["category"] = "MALWARE"
+
         # Build up candidate terms from rule name, tags, and metadata
         candidate_terms = set()
         hash_terms = set()
@@ -159,7 +163,7 @@ class Enricher:
 
         # Include metadata values as candidate terms
         for meta_key, meta_value in list(parsed_rule["metadata_kv"].items()) + [
-            ("comments", parsed_rule.get("comments", []))
+            ("filename", parsed_rule.get("filename", "")),
         ]:
             if meta_key in ["fingerprint", "id", "version"]:
                 continue

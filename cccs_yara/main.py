@@ -28,6 +28,7 @@ def validate_yara_rule(
     default_metadata: dict = {},
     validator_model: BaseModel = RuleValidatorModel,
     field_aliases: Dict[str, str] = {"hash": "hash.*", "sharing": "classification", "date": "creation_date"},
+    filename: str = "",
 ) -> List[Tuple[dict, List[dict]]]:
     """Validate a YARA rule file using the RuleValidatorModel.
 
@@ -36,6 +37,7 @@ def validate_yara_rule(
         default_metadata (dict): Default metadata values to use if not present in the rule.
         validator_model (BaseModel): The Pydantic model to use for validation.
         field_aliases (dict): A dictionary of field aliases to use during validation.
+        filename (str): The filename of the YARA rule file being validated.
 
     Returns:
         RuleValidatorModel: The validated YARA rule model.
@@ -47,6 +49,8 @@ def validate_yara_rule(
     if isinstance(rule_content, dict):
         # If the input is already a dict (parsed rule), validate directly
         try:
+            rule_content["filename"] = filename
+            rule_content.setdefault("metadata_kv", {})
             rule_content["original_kv"] = rule_content["metadata_kv"].copy()
             rule_content["metadata_kv"] = validator_model.model_validate(
                 rule_content["metadata_kv"],
@@ -64,18 +68,11 @@ def validate_yara_rule(
         parsed_rules = p.parse_string(rule_content)
         validated_rules = []
 
-        start_index = 0
-        comments = []
-        while rule_content.count("/*") > 0 and rule_content.count("*/"):
-            start_index = rule_content.index("/*")
-            end_index = rule_content.index("*/", start_index)
-            comments.extend([line.strip() for line in rule_content[start_index + 2 : end_index].splitlines()])
-            rule_content = rule_content[end_index + 2 :]
-
         for rule in parsed_rules:
             try:
-                rule["comments"] = comments
+                rule.setdefault("metadata_kv", {})
                 rule["original_kv"] = rule["metadata_kv"].copy()
+                rule["filename"] = filename
                 rule["metadata_kv"] = validator_model.model_validate(
                     rule["metadata_kv"],
                     context={"rule": rule, "default_metadata": default_metadata, "aliases": field_aliases},
