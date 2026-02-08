@@ -283,9 +283,24 @@ class Enricher:
 
         if "category" not in parsed_rule["metadata_kv"]:
             if "malware_type" in parsed_rule["metadata_kv"]:
+                # Ensure category is set to MALWARE if malware_type is present
                 parsed_rule["metadata_kv"]["category"] = "MALWARE"
             else:
                 for category, keywords in CATEGORY_KEYWORDS.items():
                     if set(keywords).intersection(set(candidate_terms)):
+                        # Assign category based on keywords found in the rule metadata
                         parsed_rule["metadata_kv"]["category"] = category
                         break
+
+        # Handle misattribution of malware and actor metadata by checking for conflicting terms
+        if "COBALT" in parsed_rule["metadata_kv"].get("actor", []) and "COBALT STRIKE" in parsed_rule[
+            "metadata_kv"
+        ].get("malware", []):
+            # Cobalt actor was likely misattributed because of similarity to Cobalt Strike malware,
+            # remove actor metadata
+            parsed_rule["metadata_kv"]["actor"].remove("COBALT")
+
+        # Cleanup metadata that has no value after enrichment
+        for key in list(parsed_rule["metadata_kv"].keys()):
+            if not parsed_rule["metadata_kv"][key]:
+                del parsed_rule["metadata_kv"][key]
