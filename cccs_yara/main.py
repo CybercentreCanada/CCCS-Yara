@@ -92,4 +92,4 @@ def rebuild_rule(rule):
         else:
             new_metadata.append({key: value})
     rule["metadata"] = new_metadata
-    return rebuild_yara_rule(rule)
+    return rebuild_yara_rule(rule).replace('\t', '    ') + "\n"

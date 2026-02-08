@@ -246,8 +246,8 @@ def execute_command(options):
 
         # Validate each YARA rule file
         with ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(
+            futures = {
+                yara_rule_path: executor.submit(
                     process_rule_file,
                     yara_rule_path,
                     options,
@@ -260,12 +260,15 @@ def execute_command(options):
                     logger,
                 )
                 for yara_rule_path in list(paths_to_validate)
-            ]
+            }
 
-            for future in futures:
-                total, failed = future.result()
-                total_analyzed += total
-                total_failed += failed
+            for yara_rule_path, future in futures.items():
+                try:
+                    total, failed = future.result()
+                    total_analyzed += total
+                    total_failed += failed
+                except Exception as e:
+                    logger.error(f"Error processing YARA rule file ({yara_rule_path}): {e}")
 
         total_valid = total_analyzed - total_failed
         valid_percentage = (total_valid / total_analyzed * 100) if total_analyzed > 0 else 0
