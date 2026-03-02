@@ -267,8 +267,8 @@ def execute_command(options):
                     total, failed = future.result()
                     total_analyzed += total
                     total_failed += failed
-                except Exception as e:
-                    logger.error(f"Error processing YARA rule file ({yara_rule_path}): {e}")
+                except Exception:
+                    logger.exception(f"Error processing YARA rule file ({yara_rule_path})")
 
         total_valid = total_analyzed - total_failed
         valid_percentage = (total_valid / total_analyzed * 100) if total_analyzed > 0 else 0

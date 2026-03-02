@@ -431,6 +431,10 @@ class RuleValidatorModel(BaseModel, extra="allow"):
                     # If so, skip re-adding it
                     cls.model_extra.pop(key)
                     continue
+                elif f"{value}.0" == str(getattr(cls, original_key, None)):
+                    # If so, skip re-adding it
+                    cls.model_extra.pop(key)
+                    continue
 
                 if list(value or "") == list(getattr(cls, original_key, None) or ""):
                     # If so, skip re-adding it
