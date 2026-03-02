@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cccs-yara"
+description = "A CCCS utility for YARA rule metadata validation"
+dynamic = ["version", "readme", "dependencies"]
+requires-python = ">=3.10"
+authors = [{ name = "cccs-rs" }]
+maintainers = [{ name = "cccs-rs" }]
+license = { file = "LICENSE.md" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+
+    "Topic :: Software Development :: Libraries :: Python Modules",
+
+    "License :: OSI Approved :: MIT License",
+
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.scripts]
+cccs-yara = "cccs_yara.cli:main"
+
+[project.urls]
+Repository = "https://github.com/CybercentreCanada/cccs-yara"
+Issues = "https://github.com/CybercentreCanada/cccs-yara/issues"
+
+[tool.setuptools_scm]
+
+[tool.setuptools.dynamic]
+readme = { file = ["README.md"], content-type = "text/markdown" }
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+docstring-code-format = true
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
+# Add the `line-too-long` rule to the enforced rule set. By default, Ruff omits rules that
+# overlap with the use of a formatter, like Black, but we can override this behavior by
+# explicitly adding the rule.
+extend-select = ["E501", "D", "D404", "DOC"]
+ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
+preview = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

@@ -4,16 +4,12 @@ trigger: ["*"]
 pr: ["*"]
 
 pool:
-  vmImage: "ubuntu-20.04"
+  vmImage: "ubuntu-latest"
 
 jobs:
   - job: run_test
     strategy:
       matrix:
-        Python3_8:
-          python.version: "3.8"
-        Python3_9:
-          python.version: "3.9"
         Python3_10:
           python.version: "3.10"
         Python3_11:
@@ -32,6 +28,7 @@ jobs:
           [ ! -d "$(pwd)/tests" ] && echo "No tests found" && exit
           [ -f $(pwd)/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
           [ -f $(pwd)/tests/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/tests/requirements.txt
+          sudo env "PATH=$PATH" python -m pip install -e .
           sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
 
         displayName: Setup environment

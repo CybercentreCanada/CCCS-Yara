@@ -58,77 +58,78 @@ rule MemoryModule {
 
 ## Components
 
-validator.py: This is the validator library. It is used to validate the metadata section of YARA rules. It verifies specified metadata information, auto-generates some of metadata information and re-sorts the metadata information into the canonical order with all 'unknown' metadata information appended to the bottom.
+### Validation
+This is composed of using a Pydantic model to define the expected metadata fields, their types, acceptable values and any auto-generation of fields as needed. The validator library is used to validate YARA rules' metadata against this model.
 
-- [CCCS_YARA.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml): This is the definition of the CCCS YARA Standard in the YAML format. (Limitation: This file is provided to show what fields are expected, currently the yara_validator doeSn't use this file directly, this will be addressed in a future release.)
+### Knowledge Bases & Enrichment
+This is a collection of modules to assist in enriching YARA rules with additional context with information from MITRE ATT&CK framework, Malpedia, MISP clusters, and any other piece of open threat intelligence that can be mapped to YARA rules.
 
-- [CCCS_YARA_values.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA_values.yml): File which describe the list of acceptable values for fields defined in the CCCS_YARA.yml
+*NOTE: The enrichment modules are still under development and will be expanded over time to include more sources and better mapping techniques. It is recommended to review metadata that gets added to the rule to ensure accuracy and relevance.*
 
-yara_validator: This is a command line interface utility. It takes a file, list of files, a folder looking for files with the .yar or .yara extension.
+### CLI (cccs-yara)
+This is the command line interface to perform validation and enrichment of YARA rules. The CLI uses the validator library to validate and auto-generate metadata information as needed. It also uses the enricher library to add additional context to the YARA rules. The CLI supports passing in an alternate validation model written in Pydantic and default metadata information.
 
-## Requirements
 
-Python 3.6+
+## CLI Usage
+The CLI contains two subcommands: `info` and `validate`. `info` displays information about the YARA validator, while `validate` validates YARA rules against the CCCS YARA standard (as you're probably more familiar with in previous versions).
 
-All required python packages are in the requirements.txt
+### General
+```bash
+$ cccs-yara --help
+      ____ ____ ____ ____   __   __ _    ____      _
+     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
+    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
+    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
+     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
 
-The [Cyber Threat Intelligence Repository](https://github.com/mitre/cti) is a submodule of this repository:
+usage: cccs-yara [-h] [--validator VALIDATOR] {info,validate} ...
 
+CCCS YARA CLI to validate and enrich YARA rules.
+
+options:
+  -h, --help            show this help message and exit
+  --validator VALIDATOR
+                        Path to Pydantic model configuration, i.e. yara_validator.validator:RuleValidatorModel
+
+subcommands:
+  {info,validate}
+    info                Display information about the YARA validator.
+    validate            Validate YARA rules against the CCCS YARA standard.
 ```
-git clone https://github.com/CybercentreCanada/CCCS-Yara.git
-cd CCCS-Yara
-pip install  .
-```
 
-## yara_validator usage
+### Validate
+```bash
+$cccs-yara validate --help
+      ____ ____ ____ ____   __   __ _    ____      _
+     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
+    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
+    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
+     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
 
-```
-yara_validator -h
-     ____ ____ ____ ____   __   __ _    ____      _
-    / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
-   | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
-   | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
-    \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
-
-usage: yara_validator [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
-                             [-m] [-i | -c]
-                             paths [paths ...]
-
-CCCS YARA script to run the CCCS YARA validator, use the -i or -c flags to
-generate the id, fingerprint, version, or modified (if
-not already present) and add them to the file.
+usage: cccs-yara validate [-h] [-r] [-v {INFO,DEBUG,WARN,ERROR}] [-e] [-dm DEFAULT_METADATA] [-o {inplace,createfile}] [paths ...]
 
 positional arguments:
-  paths                A list of files or folders to be analyzed.
+  paths                 A list of files or folders to be enriched.
 
-optional arguments:
-  -h, --help           show this help message and exit
-  -r, --recursive      Recursively search folders provided.
-  -n, --no-changes     Makes no changes and outputs potential results to the
-                       output.
-  -v, --verbose        Verbose mode, will print why a rule was invalid.
-  -vv, --very-verbose  Very-verbose mode, will printout what rule is about to
-                       be processed, the invalid rules, the reasons they are
-                       invalid and all contents of the rule.
-  -f, --fail           Fail mode, only prints messages about invalid rules.
-  -w, --warnings       This mode will ignore warnings and proceed with other
-                       behaviors if the rule is valid.
-  -s, --standard       This prints the YARA standard to the screen.
-  -st, --strict        This causes the cli to return a non-zero exit code for
-                       warnings.
-  -m, --module         This flag overrides the check for modules that have not
-                       been imported.
-  -i, --in-place       Modifies valid files in place, mutually exclusive with
-                       -c.
-  -c, --create-files   Writes a new file for each valid file, mutually
-                       exclusive with -i.
+options:
+  -h, --help            show this help message and exit
+  -r, --recursive       Recursively search folders provided.
+  -v {INFO,DEBUG,WARN,ERROR}, --verbose {INFO,DEBUG,WARN,ERROR}
+                        Control the verbosity of logging output. Options are INFO, DEBUG, WARN, ERROR. Default is ERROR to track only errors. WARN to track
+                        warnings and errors such as proposed changes. INFO to track high-level processing information. DEBUG to track detailed debugging
+                        information.
+  -e, --enrich          Enrich the YARA rules with additional metadata from knowledge sources.
+  -dm DEFAULT_METADATA, --default-metadata DEFAULT_METADATA
+                        A JSON string representing default metadata to apply to rules during validation.
+  -o {inplace,createfile}, --output {inplace,createfile}
+                        Decide how to handle output of validated rules. Options are 'inplace' to modify files in place and 'createfile' to write validated rules to new files named after the rule.
 ```
 
 Quick example:
 
-```
+```bash
 # Rule will be converted inline
-python yara_validator -v -i <path>
+cccs-yara validate -v -i <path>
 ```
 
 # Centre canadien pour la cybersécurité
@@ -184,70 +185,73 @@ rule MemoryModule {
 - https://github.com/reversinglabs/reversinglabs-yara-rules
 - https://github.com/bartblaze/Yara-rules
 
-## Composantes
+### Validation
+Elle consiste à utiliser un modèle Pydantic pour définir les champs de métadonnées attendus, leurs types, les valeurs acceptables et toute génération automatique de champs si nécessaire. La bibliothèque de validation est utilisée pour valider les métadonnées des règles YARA par rapport à ce modèle.
 
-validator.py: La librairie de validation. Elle permet de vérifier si une règle YARA a tous les attributs nécessaires, elle auto-génère aussi certain attribut et les ordonnent selon l'ontologie. Tous les attributs supplémentaires ne faisant pas partie de la spécification sont placé à la fin.
+### Bases de connaissances et enrichissement
+Il s'agit d'un ensemble de modules destinés à enrichir les règles YARA avec des informations contextuelles supplémentaires provenant du cadre MITRE ATT&CK, de Malpedia, des clusters MISP et de toute autre source d'informations ouvertes sur les menaces pouvant être mappées aux règles YARA.
 
-- [CCCS_YARA.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA.yml): Fichier de de définition de la spécification. (Limitation: Ce fichier démontre les attributs nécessaires, présentement le validateur n'utilise pas se fichier directement, ceci sera améliorer dans le futur.)
+### CLI (cccs-yara)
+Il s'agit de l'interface de ligne de commande permettant d'effectuer la validation et l'enrichissement des règles YARA. La CLI utilise la bibliothèque de validation pour valider et générer automatiquement les informations de métadonnées selon les besoins. Elle utilise également la bibliothèque d'enrichissement pour ajouter du contexte supplémentaire aux règles YARA. La CLI prend en charge le passage d'un modèle de validation alternatif écrit en Pydantic et d'informations de métadonnées par défaut.
 
-- [CCCS_YARA_values.yml](https://github.com/CybercentreCanada/CCCS-Yara/blob/master/CCCS_YARA_values.yml): Fichier qui décrit les valeurs acceptables pour chacun des attributs définit dans CCCS_YARA.yml.
 
-yara_validator: Utilitaire de validation pour la ligne de commande. Il accepte une règle, une liste de règles ou un dossier pour validé les fichiers se terminant par .yar ou .YARA.
+## Utilisation de la CLI
+La CLI contient deux sous-commandes : info` et `validate`. `info` affiche des informations sur le validateur YARA, tandis que `validate` valide les règles YARA par rapport à la norme CCCS YARA (que vous connaissez probablement mieux dans les versions précédentes).
 
-## Exigences
+### General
+```bash
+$ cccs-yara --help
+      ____ ____ ____ ____   __   __ _    ____      _
+     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
+    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
+    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
+     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
 
-Python 3.6+
+usage: cccs-yara [-h] [--validator VALIDATOR] {info,validate} ...
 
-Tous les libraries python sont dans le fichier requirements.txt
+CCCS YARA CLI to validate and enrich YARA rules.
 
-[Cyber Threat Intelligence Repository](https://github.com/mitre/cti) est un sous module de ce répertoire:
+options:
+  -h, --help            show this help message and exit
+  --validator VALIDATOR
+                        Path to Pydantic model configuration, i.e. yara_validator.validator:RuleValidatorModel
 
+subcommands:
+  {info,validate}
+    info                Display information about the YARA validator.
+    validate            Validate YARA rules against the CCCS YARA standard.
 ```
-git clone https://github.com/CybercentreCanada/CCCS-Yara.git
-cd CCCS-Yara
-pip install  .
-```
+### Validate
+```bash
+$cccs-yara validate --help
+      ____ ____ ____ ____   __   __ _    ____      _
+     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
+    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
+    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
+     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
 
-## yara_validator en ligne de commandes
-
-```
-yara_validator -h
-     ____ ____ ____ ____   __   __ _    ____      _
-    / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \
-   | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \
-   | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \
-    \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\
-
-usage: yara_validator [-h] [-r] [-n] [-v] [-vv] [-f] [-w] [-s] [-st]
-                             [-m] [-i | -c]
-                             paths [paths ...]
-
-CCCS YARA script to run the CCCS YARA validator, use the -i or -c flags to
-generate the id, fingerprint, version, or modified (if
-not already present) and add them to the file.
+usage: cccs-yara validate [-h] [-r] [-v {INFO,DEBUG,WARN,ERROR}] [-e] [-dm DEFAULT_METADATA] [-o {inplace,createfile}] [paths ...]
 
 positional arguments:
-  paths                A list of files or folders to be analyzed.
+  paths                 A list of files or folders to be enriched.
 
-optional arguments:
-  -h, --help           show this help message and exit
-  -r, --recursive      Recursively search folders provided.
-  -n, --no-changes     Makes no changes and outputs potential results to the
-                       output.
-  -v, --verbose        Verbose mode, will print why a rule was invalid.
-  -vv, --very-verbose  Very-verbose mode, will printout what rule is about to
-                       be processed, the invalid rules, the reasons they are
-                       invalid and all contents of the rule.
-  -f, --fail           Fail mode, only prints messages about invalid rules.
-  -w, --warnings       This mode will ignore warnings and proceed with other
-                       behaviors if the rule is valid.
-  -s, --standard       This prints the YARA standard to the screen.
-  -st, --strict        This causes the cli to return a non-zero exit code for
-                       warnings.
-  -m, --module         This flag overrides the check for modules that have not
-                       been imported.
-  -i, --in-place       Modifies valid files in place, mutually exclusive with
-                       -c.
-  -c, --create-files   Writes a new file for each valid file, mutually
-                       exclusive with -i.
+options:
+  -h, --help            show this help message and exit
+  -r, --recursive       Recursively search folders provided.
+  -v {INFO,DEBUG,WARN,ERROR}, --verbose {INFO,DEBUG,WARN,ERROR}
+                        Control the verbosity of logging output. Options are INFO, DEBUG, WARN, ERROR. Default is ERROR to track only errors. WARN to track
+                        warnings and errors such as proposed changes. INFO to track high-level processing information. DEBUG to track detailed debugging
+                        information.
+  -e, --enrich          Enrich the YARA rules with additional metadata from knowledge sources.
+  -dm DEFAULT_METADATA, --default-metadata DEFAULT_METADATA
+                        A JSON string representing default metadata to apply to rules during validation.
+  -o {inplace,createfile}, --output {inplace,createfile}
+                        Decide how to handle output of validated rules. Options are 'inplace' to modify files in place and 'createfile' to write validated rules to new files named after the rule.
+```
+
+Exemple rapide:
+
+```bash
+# La règle sera convertie en ligne
+cccs-yara validate -v -i <path>
 ```
