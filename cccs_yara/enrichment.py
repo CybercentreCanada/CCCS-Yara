@@ -187,10 +187,11 @@ class Enricher:
                     c_terms = meta_value.replace("/", " ").split(" ")
 
                 for term, next in pairwise(c_terms):
-                    candidate_terms.add(term)
-                    candidate_terms.add(next)
-                    # Consider two-word combinations as well
-                    candidate_terms.add(f"{term}{next}")
+                    if term.lower() not in {"do"} and next.lower() not in {"not"}:
+                        candidate_terms.add(term)
+                        candidate_terms.add(next)
+                        # Consider two-word combinations as well
+                        candidate_terms.add(f"{term}{next}")
             elif isinstance(meta_value, list):
                 for item in meta_value:
                     if re.match(GENERIC_HASH_REGEX, item):
@@ -211,10 +212,11 @@ class Enricher:
                         c_terms = item.replace("/", " ").split(" ")
 
                     for term, next in pairwise(c_terms):
-                        candidate_terms.add(term)
-                        candidate_terms.add(next)
-                        # Consider two-word combinations as well
-                        candidate_terms.add(f"{term}{next}")
+                        if term.lower() not in {"do"} and next.lower() not in {"not"}:
+                            candidate_terms.add(term)
+                            candidate_terms.add(next)
+                            # Consider two-word combinations as well
+                            candidate_terms.add(f"{term}{next}")
 
         # Filter out terms that aren't useful
         candidate_terms = [
