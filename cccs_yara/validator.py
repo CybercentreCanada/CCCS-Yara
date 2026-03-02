@@ -30,6 +30,9 @@ def transform_version(version_str: str) -> str:
     if not version_str:
         # If the version string is empty, return the default version
         return "1.0"
+    elif isinstance(version_str, int):
+        # If the version is an integer, convert it to a string with .0
+        return f"{version_str}.0"
 
     if version_str.startswith("."):
         version_str = "0" + version_str
