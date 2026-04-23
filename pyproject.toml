@@ -30,6 +30,9 @@ cccs-yara = "cccs_yara.cli:main"
 Repository = "https://github.com/CybercentreCanada/cccs-yara"
 Issues = "https://github.com/CybercentreCanada/cccs-yara/issues"
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [tool.setuptools_scm]
 
 [tool.setuptools.dynamic]

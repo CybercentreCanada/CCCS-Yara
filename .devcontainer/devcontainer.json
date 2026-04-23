@@ -6,7 +6,7 @@
 	"containerEnv": {
 		"SHELL": "/bin/bash"
 	},
-	"postCreateCommand": "pip install -r tests/requirements.txt -r requirements.txt",
+	"postCreateCommand": "pip install -e .[test]",
 	"runArgs": [
 		"--network=host"
 	],
