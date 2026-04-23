@@ -9,7 +9,7 @@ trigger:
 pr: none
 
 pool:
-  vmImage: "ubuntu-20.04"
+  vmImage: "ubuntu-latest"
 
 jobs:
 - job: build_and_deploy

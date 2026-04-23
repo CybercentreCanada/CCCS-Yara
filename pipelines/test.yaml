@@ -4,7 +4,7 @@ trigger: ["*"]
 pr: ["*"]
 
 pool:
-  vmImage: "ubuntu-20.04"
+  vmImage: "ubuntu-latest"
 
 jobs:
   - job: run_test
