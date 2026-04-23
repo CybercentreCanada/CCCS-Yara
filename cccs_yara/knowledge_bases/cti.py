@@ -1,48 +1,22 @@
+import logging
 import os
-from datetime import datetime
 from typing import List
 
-import stix2.utils
 from git import Repo
-from stix2 import FileSystemSource, Filter
-
-# add the casefold to the supported filter operations
-from stix2.datastore.filters import FILTER_OPS
+from mitreattack.stix20 import MitreAttackData
 
 from cccs_yara.constants import WORKING_DIR
 
+logger = logging.getLogger(__name__)
+
 CTI_GIT_URL = os.environ.get("CTI_GIT_URL", "https://github.com/mitre/cti.git@ATT&CK-v18.1")
 
-FILTER_OPS.append("casefold")
-
-
-class FilterCasefold(Filter):
-    def _check_property(self, stix_obj_property):
-        """Check a property of a STIX Object against this casefold filter, but with a casefold operator.
-
-        Args:
-            stix_obj_property: value to check this filter against
-
-        Returns:
-            True if property matches the filter,
-            False otherwise.
-        """
-        # Had to keep the following code so that
-        # If filtering on a timestamp property and the filter value is a string,
-        # try to convert the filter value to a datetime instance.
-        if isinstance(stix_obj_property, datetime) and isinstance(self.value, str):
-            filter_value = stix2.utils.parse_into_datetime(self.value)
-        else:
-            filter_value = self.value
-
-        if self.op == "casefold":
-            return stix_obj_property.casefold() == filter_value.casefold()
-        else:
-            Filter._check_property(self, stix_obj_property)
+# ATT&CK domains to load (each must have a <domain>.json bundle inside the cloned repo)
+ATTACK_DOMAINS = ("enterprise-attack", "mobile-attack", "ics-attack")
 
 
 class CTIDatabase:
-    """Class to handle CTI database operations."""
+    """Class to handle CTI database operations using mitreattack-python."""
 
     def __init__(self):
         if "@" in CTI_GIT_URL:
@@ -51,86 +25,92 @@ class CTIDatabase:
             url, branch = CTI_GIT_URL, "main"
         clone_path = os.path.join(WORKING_DIR, "cti")
         if not os.path.exists(clone_path):
-            # Clone the CTI repository if it doesn't exist
             Repo.clone_from(url, clone_path, branch=branch, depth=1)
         else:
-            # Otherwise, you might want to pull the latest changes
             repo = Repo(clone_path)
             repo.git.checkout(branch)
             repo.remotes.origin.pull()
 
-        # Initialize collections that are "attack" specific
-        self.collections = [
-            FileSystemSource(os.path.join(clone_path, source))
-            for source in os.listdir(clone_path)
-            if source.endswith("-attack")
-        ]
+        # Load each ATT&CK domain from its STIX bundle
+        self._datasets: List[MitreAttackData] = []
+        for domain in ATTACK_DOMAINS:
+            bundle_path = os.path.join(clone_path, domain, f"{domain}.json")
+            if os.path.exists(bundle_path):
+                self._datasets.append(MitreAttackData(bundle_path))
+            else:
+                logger.warning("ATT&CK bundle not found: %s", bundle_path)
 
-        # Initialize lookup maps for quick access
-        self.malware_lookup = {
-            result["name"]: result.get("x_mitre_aliases", [])
-            for result in self._query([Filter("type", "=", "malware")])
-        }
+        # Build lookup maps (same structure as before for backwards compatibility)
+        self.malware_lookup: dict[str, list[str]] = {}
+        self.tool_lookup: dict[str, list[str]] = {}
+        self.actor_lookup: dict[str, list[str]] = {}
 
-        self.tool_lookup = {
-            result["name"]: result.get("x_mitre_aliases", []) for result in self._query([Filter("type", "=", "tool")])
-        }
+        for ds in self._datasets:
+            for sw in ds.get_software():
+                aliases = getattr(sw, "x_mitre_aliases", []) or []
+                if sw.type == "tool":
+                    self.tool_lookup.setdefault(sw.name, []).extend(aliases)
+                else:
+                    self.malware_lookup.setdefault(sw.name, []).extend(aliases)
 
-        self.actor_lookup = {
-            result["name"]: result.get("aliases", []) for result in self._query([Filter("type", "=", "intrusion-set")])
-        }
+            for group in ds.get_groups():
+                aliases = getattr(group, "aliases", []) or []
+                self.actor_lookup.setdefault(group.name, []).extend(aliases)
 
-    def _query(self, filters: List[Filter]) -> list:
-        """Query all collections for a given indicator.
-
-        Args:
-            filters (List[Filter]): The filters to apply to the query.
-
-        Returns:
-            list: A list of STIX objects matching the filters.
-        """
-        results = []
-        for collection in self.collections:
-            r = collection.query(filters)
-            if not r:
-                continue
-            results.extend(r)
-        return results
-
-    def query(self, indicator: str, exhaustive_list: list[str] = []) -> list:
+    def query(self, indicator: str, exhaustive_list: list[str] = None) -> list:
         """Query the CTI database for a given indicator.
 
         Args:
-            indicator (str): The indicator to query.
-            exhaustive_list (list[str], optional): List of STIX object types to search if no ID match is found.
+            indicator: An ATT&CK ID (e.g. T1059, G0007, S0154) or a name to search for.
+            exhaustive_list: STIX object types to search by name if no ID match is found
+                             (e.g. ["intrusion-set", "malware"]).
 
         Returns:
-            list: A list of STIX objects matching the indicator.
+            A list of STIX objects matching the indicator.
         """
-        if indicator.startswith("TA"):
-            return self._query(
-                [Filter("type", "=", "x-mitre-tactic"), Filter("external_references.external_id", "=", indicator)]
-            )
-        elif indicator.startswith("T"):
-            return self._query(
-                [Filter("type", "=", "attack-pattern"), Filter("external_references.external_id", "=", indicator)]
-            )
-        elif indicator.startswith("S"):
-            return self._query(
-                [Filter("type", "=", "malware"), Filter("external_references.external_id", "=", indicator)]
-            ) + self._query([Filter("type", "=", "tool"), Filter("external_references.external_id", "=", indicator)])
-        elif indicator.startswith("G"):
-            return self._query(
-                [Filter("type", "=", "intrusion-set"), Filter("external_references.external_id", "=", indicator)]
-            )
-        elif indicator.startswith("M"):
-            return self._query(
-                [Filter("type", "=", "course-of-action"), Filter("external_references.external_id", "=", indicator)]
-            )
-        elif exhaustive_list:
-            # Hail mary for other types of indicators, typically when given a name and not an ID
-            output = []
-            for collection in exhaustive_list:
-                output += self._query([Filter("type", "=", collection), FilterCasefold("name", "casefold", indicator)])
-            return output
-        return []
+        results = []
+
+        # ID-based lookups
+        prefix_to_types = {
+            "TA": ["x-mitre-tactic"],
+            "T": ["attack-pattern"],
+            "S": ["malware", "tool"],
+            "G": ["intrusion-set"],
+            "M": ["course-of-action"],
+        }
+
+        # Find the matching prefix (check "TA" before "T")
+        for prefix, matched_types in prefix_to_types.items():
+            if indicator.startswith(prefix):
+                for ds in self._datasets:
+                    for stix_type in matched_types:
+                        try:
+                            obj = ds.get_object_by_attack_id(indicator, stix_type=stix_type)
+                        except Exception:
+                            logger.warning("Error querying CTI dataset for %s: %s", indicator, exc_info=True)
+                            continue
+                        if obj:
+                            results.append(obj)
+                return results
+
+        # Name-based lookups (case-insensitive, since get_*_by_alias is case-sensitive)
+        if exhaustive_list:
+            indicator_lower = indicator.casefold()
+            for stix_type in exhaustive_list:
+                for ds in self._datasets:
+                    if stix_type == "intrusion-set":
+                        for obj in ds.get_groups():
+                            aliases = getattr(obj, "aliases", []) or []
+                            if obj.name.casefold() == indicator_lower or any(
+                                a.casefold() == indicator_lower for a in aliases
+                            ):
+                                results.append(obj)
+                    elif stix_type in ("malware", "tool"):
+                        for obj in ds.get_software():
+                            aliases = getattr(obj, "x_mitre_aliases", []) or []
+                            if obj.name.casefold() == indicator_lower or any(
+                                a.casefold() == indicator_lower for a in aliases
+                            ):
+                                results.append(obj)
+
+        return results

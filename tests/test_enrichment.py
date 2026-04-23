@@ -3,7 +3,13 @@ import pytest
 from cccs_yara.enrichment import Enricher
 
 
-def test_general_enrichment():
+@pytest.fixture(scope="module")
+def enricher():
+    """Instantiate the Enricher module once for all tests in this module."""
+    return Enricher()
+
+
+def test_general_enrichment(enricher):
     # Reference: https://github.com/SEKOIA-IO/Community/blob/main/yara_rules/apt_agent_racoon_strings.yar
     parsed_rule = {
         "rule_name": "apt_agent_racoon",
@@ -14,7 +20,6 @@ def test_general_enrichment():
 
     # Based on the description of the rule and the rule name,
     # we should be able to enrich it with the actor and malware family
-    enricher = Enricher()
     enricher.enrich_yara_rule(parsed_rule)
 
     assert parsed_rule["metadata_kv"] == {
@@ -27,10 +32,9 @@ def test_general_enrichment():
     }
 
 
-def test_single_token_enrichment():
+def test_single_token_enrichment(enricher):
     # A rule whose name has no underscores (single token) and whose metadata
     # contains only one-word values should still be enriched correctly.
-    enricher = Enricher()
 
     # Single-token rule name that matches a known actor pattern
     parsed_rule = {
@@ -53,7 +57,7 @@ def test_single_token_enrichment():
 
 
 @pytest.mark.parametrize("description", ["Cobaltstrike", "Cobalt Strike"])
-def test_cobalt_strike_description_enrichment(description):
+def test_cobalt_strike_description_enrichment(enricher, description):
     parsed_rule = {
         "rule_name": "detect_tooling",
         "metadata_kv": {
@@ -61,7 +65,6 @@ def test_cobalt_strike_description_enrichment(description):
         },
     }
 
-    enricher = Enricher()
     enricher.enrich_yara_rule(parsed_rule)
 
     assert parsed_rule["metadata_kv"].get("malware") == {"COBALT STRIKE"}
@@ -69,7 +72,7 @@ def test_cobalt_strike_description_enrichment(description):
 
 
 @pytest.mark.parametrize("rule_name", ["cobaltstrike_payload", "cobalt_strike_payload"])
-def test_cobalt_strike_rule_name_enrichment(rule_name):
+def test_cobalt_strike_rule_name_enrichment(enricher, rule_name):
     parsed_rule = {
         "rule_name": rule_name,
         "metadata_kv": {
@@ -77,7 +80,6 @@ def test_cobalt_strike_rule_name_enrichment(rule_name):
         },
     }
 
-    enricher = Enricher()
     enricher.enrich_yara_rule(parsed_rule)
 
     assert parsed_rule["metadata_kv"].get("malware") == {"COBALT STRIKE"}
@@ -85,7 +87,7 @@ def test_cobalt_strike_rule_name_enrichment(rule_name):
 
 
 @pytest.mark.parametrize("description", ["do not", "please do not"])
-def test_do_not_does_not_match_donot_malware(description):
+def test_do_not_does_not_match_donot_malware(enricher, description):
     parsed_rule = {
         "rule_name": "test_rule",
         "metadata_kv": {
@@ -93,14 +95,13 @@ def test_do_not_does_not_match_donot_malware(description):
         },
     }
 
-    enricher = Enricher()
     enricher.enrich_yara_rule(parsed_rule)
 
     assert "malware" not in parsed_rule["metadata_kv"]
 
 
 @pytest.mark.parametrize("description", ["donot", "please donot"])
-def test_donot_matches_donot_malware(description):
+def test_donot_matches_donot_malware(enricher, description):
     parsed_rule = {
         "rule_name": "test_rule",
         "metadata_kv": {
@@ -108,7 +109,6 @@ def test_donot_matches_donot_malware(description):
         },
     }
 
-    enricher = Enricher()
     enricher.enrich_yara_rule(parsed_rule)
 
     assert parsed_rule["metadata_kv"].get("malware") == {"DONOT"}
