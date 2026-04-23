@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+import re
 
 import baseconv
 from plyara.utils import generate_hash
@@ -34,11 +35,17 @@ def transform_version(version_str: str) -> str:
         # If the version is an integer, convert it to a string with .0
         return f"{version_str}.0"
 
+    version_str = str(version_str).strip()
+
+    # Keep valid dotted versions unchanged.
+    if re.fullmatch(r"\d+\.\d+", version_str):
+        return version_str
+
     if version_str.startswith("."):
         version_str = "0" + version_str
     elif version_str.endswith("."):
         version_str = version_str + "0"
-    elif "." not in version_str:
+    elif version_str.isdigit():
         version_str = version_str + ".0"
     else:
         version_str = "1.0"

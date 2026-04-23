@@ -2,7 +2,7 @@ import re
 
 from plyara import Plyara
 
-from cccs_yara.validator import RuleValidatorModel
+from cccs_yara.validator import RuleValidatorModel, transform_version
 
 RULES = """
 rule x
@@ -149,3 +149,13 @@ def test_default_metadata():
         # Assert default metadata values are applied
         assert validated_metadata.author == "Default Author"
         assert validated_metadata.source == "Default Source".upper()
+
+
+def test_transform_version():
+    assert transform_version("2.3") == "2.3"
+    assert transform_version("2") == "2.0"
+    assert transform_version(".7") == "0.7"
+    assert transform_version("3.") == "3.0"
+    assert transform_version(4) == "4.0"
+    assert transform_version("") == "1.0"
+    assert transform_version("invalid") == "1.0"
