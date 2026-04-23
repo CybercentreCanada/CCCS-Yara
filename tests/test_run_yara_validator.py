@@ -1,6 +1,7 @@
+from tempfile import NamedTemporaryFile
+
 import pytest
 
-from tempfile import NamedTemporaryFile
 from yara_validator.validator import run_yara_validator
 
 RULES = b"""
@@ -69,7 +70,7 @@ NO_METADATA_RULE = b"""
 rule no_metadata {
     strings:
         $ = "lol"
-    condition: 
+    condition:
         any of them
 }
 """
@@ -96,5 +97,5 @@ def test_no_metadata(generate_values):
 
                 assert fingerprint and id_val
             else:
-                #
+                # Otherwise don't expect any metadata to be generated
                 assert "metadata" not in rule.rule_plyara
