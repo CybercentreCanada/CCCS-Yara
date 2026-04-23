@@ -503,8 +503,11 @@ class YaraValidator:
         valid.rule_name = rule_to_validate.get('rule_name', None)
 
         if METADATA not in rule_to_validate:
-            valid.update_validity(False, METADATA, 'No Metadata Present')
-            return valid
+            if generate_values:
+                rule_to_validate[METADATA] = []
+            else:
+                valid.update_validity(False, METADATA, 'No Metadata Present')
+                return valid
 
         if SCOPES in rule_to_validate:
             for scope in rule_to_validate[SCOPES]:
