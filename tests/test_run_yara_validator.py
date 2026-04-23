@@ -1,5 +1,7 @@
 from tempfile import NamedTemporaryFile
 
+import pytest
+
 from yara_validator.validator import run_yara_validator
 
 RULES = b"""
@@ -54,11 +56,46 @@ def test_required_fields():
 
         for rule in run_yara_validator(tf.name, generate_values=True).yara_rules:
             fingerprint, id = None, None
-            for m in rule.rule_plyara['metadata']:
-                if 'id' in m:
-                    id = m['id']
-                elif 'fingerprint' in m:
-                    fingerprint = m['fingerprint']
+            for m in rule.rule_plyara["metadata"]:
+                if "id" in m:
+                    id = m["id"]
+                elif "fingerprint" in m:
+                    fingerprint = m["fingerprint"]
 
             # Ensure the fingerprint and the id metadata fields were generated for all rules
             assert fingerprint and id
+
+
+NO_METADATA_RULE = b"""
+rule no_metadata {
+    strings:
+        $ = "lol"
+    condition:
+        any of them
+}
+"""
+
+
+@pytest.mark.parametrize("generate_values", [True, False])
+def test_no_metadata(generate_values):
+    with NamedTemporaryFile() as tf:
+        tf.write(NO_METADATA_RULE)
+        tf.seek(0)
+
+        for rule in run_yara_validator(
+            tf.name, generate_values=generate_values
+        ).yara_rules:
+            if generate_values:
+                # If generate_values is True, metadata should be generated even if it doesn't exist in the original rule
+                assert "metadata" in rule.rule_plyara
+                fingerprint, id_val = None, None
+                for m in rule.rule_plyara["metadata"]:
+                    if "id" in m:
+                        id_val = m["id"]
+                    elif "fingerprint" in m:
+                        fingerprint = m["fingerprint"]
+
+                assert fingerprint and id_val
+            else:
+                # Otherwise don't expect any metadata to be generated
+                assert "metadata" not in rule.rule_plyara
