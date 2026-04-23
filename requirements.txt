@@ -4,5 +4,5 @@ packaging>=26.1
 plyara
 python-baseconv>=1.2.2
 PyYAML>=6.0.3
-stix2>=2.1.0
+stix2>=3.0.2
 yara-python>=4.5.4
