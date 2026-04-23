@@ -145,18 +145,34 @@ class Enricher:
                 # If malware type has been determined, set category to MALWARE
                 parsed_rule["metadata_kv"]["category"] = "MALWARE"
 
+        def find_best_lookup_match(lookup_items: list[tuple[str, list[str]]]) -> str | None:
+            """Return the most specific lookup match for the current candidate terms."""
+            best_name = None
+            best_score = 0
+
+            for entry_name, entry_synonyms in lookup_items:
+                normalized_lookup_terms = {term.replace(" ", "").upper() for term in entry_synonyms + [entry_name]}
+                matched_terms = normalized_lookup_terms.intersection(normalized_candidate_terms)
+                if not matched_terms:
+                    continue
+
+                score = max(len(term) for term in matched_terms)
+                if score > best_score:
+                    best_name = entry_name
+                    best_score = score
+
+            return best_name
+
         # Build up candidate terms from rule name, tags, and metadata
         candidate_terms = set()
         hash_terms = set()
         rule_name = parsed_rule.get("rule_name", "")
-        if "_" in rule_name:
-            for curr, next in pairwise(parsed_rule.get("rule_name", "").upper().split("_")):
-                candidate_terms.add(curr)
-                candidate_terms.add(next)
-                # Consider two-word combinations in the rule name as well
-                candidate_terms.add(f"{curr}{next}")
-        else:
-            candidate_terms.add(rule_name.upper())
+        rule_name_tokens = rule_name.upper().split("_") if "_" in rule_name else [rule_name.upper()]
+        # Add every token individually so single-token names are never dropped
+        candidate_terms.update(rule_name_tokens)
+        # Also add adjacent-token bigrams for compound lookups
+        for curr, next_token in pairwise(rule_name_tokens):
+            candidate_terms.add(f"{curr}{next_token}")
 
         # Include tags as candidate terms
         candidate_terms.update([tag.upper() for tag in parsed_rule.get("tags", [])])
@@ -186,12 +202,12 @@ class Enricher:
                 else:
                     c_terms = meta_value.replace("/", " ").split(" ")
 
-                for term, next in pairwise(c_terms):
-                    if term.lower() not in {"do"} and next.lower() not in {"not"}:
-                        candidate_terms.add(term)
-                        candidate_terms.add(next)
+                # Add every token individually so single-token values are never dropped
+                candidate_terms.update(t for t in c_terms if t)
+                for term, next_term in pairwise(c_terms):
+                    if term.lower() not in {"do"} and next_term.lower() not in {"not"}:
                         # Consider two-word combinations as well
-                        candidate_terms.add(f"{term}{next}")
+                        candidate_terms.add(f"{term}{next_term}")
             elif isinstance(meta_value, list):
                 for item in meta_value:
                     if re.match(GENERIC_HASH_REGEX, item):
@@ -211,12 +227,12 @@ class Enricher:
                     else:
                         c_terms = item.replace("/", " ").split(" ")
 
-                    for term, next in pairwise(c_terms):
-                        if term.lower() not in {"do"} and next.lower() not in {"not"}:
-                            candidate_terms.add(term)
-                            candidate_terms.add(next)
+                    # Add every token individually so single-token values are never dropped
+                    candidate_terms.update(t for t in c_terms if t)
+                    for term, next_term in pairwise(c_terms):
+                        if term.lower() not in {"do"} and next_term.lower() not in {"not"}:
                             # Consider two-word combinations as well
-                            candidate_terms.add(f"{term}{next}")
+                            candidate_terms.add(f"{term}{next_term}")
 
         # Filter out terms that aren't useful
         candidate_terms = [
@@ -226,6 +242,7 @@ class Enricher:
             for term in candidate_terms
             if term and not GENERIC_HASH_REGEX.match(term) and not term.upper().startswith("TLP:")
         ]
+        normalized_candidate_terms = {term.replace(" ", "").upper() for term in candidate_terms}
 
         for term in candidate_terms:
             match_found = THREAT_ACTOR_PATTERN.match(term)
@@ -244,19 +261,21 @@ class Enricher:
                 add_metadata("actor_type", actor_type)
 
         # Rely on knowledge bases to enrich the rule metadata
-        for malware_family, malware_synonyms in list(self.malpedia.malware_lookup.items()) + list(
-            self.mitre.malware_lookup.items()
-        ):
-            if set(malware_synonyms + [malware_family]).intersection(set(candidate_terms)):
-                add_metadata("malware", malware_family.upper())
-                break
+        malware_match = find_best_lookup_match(
+            list(self.malpedia.malware_lookup.items()) + list(self.mitre.malware_lookup.items())
+        )
+        if malware_match:
+            add_metadata("malware", malware_match.upper())
 
-        for actor_name, actor_synonyms in list(self.malpedia.actor_lookup.items()) + list(
-            self.mitre.actor_lookup.items()
-        ):
-            if set(actor_synonyms + [actor_name]).intersection(set(candidate_terms)):
-                add_metadata("actor", actor_name.upper())
-                break
+        tool_match = find_best_lookup_match(list(self.mitre.tool_lookup.items()))
+        if tool_match and "malware" not in parsed_rule["metadata_kv"]:
+            add_metadata("malware", tool_match.upper())
+
+        actor_match = find_best_lookup_match(
+            list(self.malpedia.actor_lookup.items()) + list(self.mitre.actor_lookup.items())
+        )
+        if actor_match:
+            add_metadata("actor", actor_match.upper())
 
         if not any(key in parsed_rule["metadata_kv"] for key in ["malware", "actor"]):
             for term in candidate_terms:
