@@ -1,15 +1,20 @@
 import collections
 import re
-import os
 from pathlib import Path
 
 import plyara
 import yaml
+
 # for querying the MITRE ATT&CK data
 from stix2 import FileSystemSource
 
-from yara_validator.constants import SCRIPT_LOCATION, VALIDATOR_CFG, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH, MITRE_STIX_DATA_PATH
-from yara_validator.validator_functions import Validators, MetadataOpt, StringEncoding, check_encoding
+from yara_validator.constants import (  # noqa: F401
+    CONFIG_VALUES_YAML_PATH,
+    CONFIG_YAML_PATH,
+    MITRE_STIX_DATA_PATH,
+    VALIDATOR_CFG,
+)
+from yara_validator.validator_functions import MetadataOpt, StringEncoding, Validators, check_encoding
 from yara_validator.yara_file_processor import YaraFileProcessor
 
 # constants to deal with various required string comparisons
@@ -105,19 +110,18 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
     :param yara_file: The file variable passed in. Usually a string or Path variable
     :param generate_values: determine if the values the validator can generate should be generated or not, default True
     :param check_import_modules: determines if the check for modules that have not been imported is run, default True
+    :param config_path: path to CCCS_YARA.yml (merged config with values)
+    :param config_values_path: deprecated, kept for backward compatibility (values are now in CCCS_YARA.yml)
+    :param validator_config_path: path to validator_cfg.yml
     :return:
     """
     if config_path:
         global CONFIG_YAML_PATH
         CONFIG_YAML_PATH = config_path
 
-    if config_values_path:
-        global CONFIG_VALUES_YAML_PATH
-        CONFIG_VALUES_YAML_PATH = config_values_path
-
     if validator_config_path:
         global VALIDATOR_CFG
-        CONFIG_VALUES_YAML_PATH = validator_config_path
+        VALIDATOR_CFG = validator_config_path
 
     with open(VALIDATOR_CFG, 'r', encoding='utf8') as config_file:
         validator_configuration = yaml.safe_load(config_file)
@@ -140,13 +144,23 @@ def run_yara_validator(yara_file, generate_values=True, check_import_modules=Tru
         yara_file_processor.update_file_error(True, str(yara_file_processor.original_rule_file.name), file_response)
         return yara_file_processor
 
-    with open(CONFIG_VALUES_YAML_PATH, 'r', encoding='utf8') as yaml_file:
-        scheme = yaml.safe_load(yaml_file)
-
     with open(CONFIG_YAML_PATH, 'r', encoding='utf8') as config_file:
         yara_config = yaml.safe_load(config_file)
 
-    validator = YaraValidator(MITRE_STIX_DATA_PATH, CONFIG_YAML_PATH, CONFIG_VALUES_YAML_PATH, yara_config, scheme)
+    # Extract values section from merged config (backward compat: also try separate values file)
+    scheme = yara_config.pop('values', None)
+    if scheme is None:
+        # Fallback: try loading from separate values file for backward compatibility
+        values_path = config_values_path or CONFIG_VALUES_YAML_PATH
+        if values_path and Path(values_path).exists():
+            with open(values_path, 'r', encoding='utf8') as yaml_file:
+                scheme = yaml.safe_load(yaml_file)
+        else:
+            raise FileNotFoundError(
+                "No 'values' section found in CCCS_YARA.yml and no separate values file available. "
+                "Please add a 'values' section to your CCCS_YARA.yml configuration.")
+
+    validator = YaraValidator(MITRE_STIX_DATA_PATH, CONFIG_YAML_PATH, yara_config, scheme)
 
     for rule in yara_file_processor.yara_rules:
         try:
@@ -384,12 +398,11 @@ class YaraValidator:
     Class for YaraValidator that does most of the work for validating YARA rules to the defined YARA Metadata Standard.
     """
 
-    def __init__(self, stix_data_path, validator_yaml, validator_yaml_values, yara_config, scheme):
+    def __init__(self, stix_data_path, validator_yaml, yara_config, scheme):
         # initialize the file system source for the MITRE ATT&CK data
         self.STIX_DATA_PATH = stix_data_path
         self.fs = FileSystemSource(self.STIX_DATA_PATH)
 
-        self.validator_yaml_values = validator_yaml_values
         self.scheme = scheme
         self.validator_yaml = validator_yaml
         self.yara_config = yara_config
@@ -759,20 +772,14 @@ class YaraValidator:
                 print('CCCS_YARA.yml: {!r} is required (in a child-parent relationship)'.format(metadata))
                 exit(1)
 
-    def read_regex_values(self, file_name, regex_metadata):
+    def read_regex_values(self, regex_metadata):
         """
-        Parses multiple values under the name 'regex_metadata' from given YAML file to make a single line of expression
-        :param file_name: name of the file to reference
-        :param regex_metadata: name of the metadata in the file that contains multiple regex expressions
+        Parses multiple values under the name 'regex_metadata' from the values section to make a single line of expression
+        :param regex_metadata: name of the metadata in the values section that contains multiple regex expressions
         :return: single line of regex expression
         """
-        regex_yaml_path = CONFIG_VALUES_YAML_PATH if "CCCS_YARA_values.yml" in file_name else \
-            SCRIPT_LOCATION.parent / file_name
-        with open(regex_yaml_path, 'r', encoding='utf8') as yaml_file:
-            scheme = yaml.safe_load(yaml_file)
-
         cfg_being_parsed = ''
-        for index, cfg in enumerate(scheme[regex_metadata]):
+        for index, cfg in enumerate(self.scheme[regex_metadata]):
             if index > 0:
                 cfg_being_parsed = cfg_being_parsed + '|'
 
@@ -867,7 +874,7 @@ class YaraValidator:
                         exit(1)
                     else:
                         metadata_argument.update(
-                            {'regexExpression': self.read_regex_values(input_fileName, input_valueName)})
+                            {'regexExpression': self.read_regex_values(input_valueName)})
                 else:
                     if input_regexExpression:
                         print(
@@ -877,19 +884,19 @@ class YaraValidator:
                     else:
                         print('{!r}: {!r} is missing a parameter - valueName'.format(self.validator_yaml, metadata))
                         exit(1)
-            else:
-                if input_valueName:
-                    if input_regexExpression:
-                        print(
-                            '{!r}: {!r} has too many parameters - valueName | regexExpression'.format(
-                                self.validator_yaml, metadata))
-                        exit(1)
-                    else:
-                        print('{!r}: {!r} is missing a parameter - fileName'.format(self.validator_yaml, metadata))
-                        exit(1)
-                elif not input_regexExpression:
-                    print('{!r}: {!r} is missing a parameter - regexExpression'.format(self.validator_yaml, metadata))
+            elif input_valueName:
+                if input_regexExpression:
+                    print(
+                        '{!r}: {!r} has too many parameters - valueName | regexExpression'.format(
+                            self.validator_yaml, metadata))
                     exit(1)
+                else:
+                    # valueName without fileName: read from merged values section
+                    metadata_argument.update(
+                        {'regexExpression': self.read_regex_values(input_valueName)})
+            elif not input_regexExpression:
+                print('{!r}: {!r} is missing a parameter - regexExpression'.format(self.validator_yaml, metadata))
+                exit(1)
         else:
             print('{!r}: {!r} has a parameter with invalid format - argument'.format(self.validator_yaml, metadata))
             exit(1)
