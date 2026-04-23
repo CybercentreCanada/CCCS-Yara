@@ -1,6 +1,6 @@
+import re
 import uuid
 from datetime import datetime
-import re
 
 import baseconv
 from plyara.utils import generate_hash
@@ -400,9 +400,11 @@ class RuleValidatorModel(BaseModel, extra="allow"):
         Annotated[
             Set[Annotated[str, StringConstraints(pattern=GENERIC_HASH_REGEX)]],
             BeforeValidator(
-                lambda x: [x.lower()]
-                if isinstance(x, str) and GENERIC_HASH_REGEX.match(x.lower())
-                else [i.lower() for i in x if GENERIC_HASH_REGEX.match(i.lower())]
+                lambda x: (
+                    [x.lower()]
+                    if isinstance(x, str) and GENERIC_HASH_REGEX.match(x.lower())
+                    else [i.lower() for i in x if GENERIC_HASH_REGEX.match(i.lower())]
+                )
             ),
         ]
     ] = Field(

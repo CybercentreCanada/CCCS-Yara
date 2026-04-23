@@ -25,6 +25,12 @@ SUPPORTED_FILE_EXTENSIONS = [".yar", ".yara", ".rules"]
 YARA_FILENAME_REGEX = re.compile(rf"({'|'.join(SUPPORTED_FILE_EXTENSIONS)})$".replace(".", r"\."))
 
 
+def get_rule_output_path(rule_name: str, source_path: Path) -> Path:
+    """Build a filesystem-safe output path based on the YARA rule name."""
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", rule_name).strip("._-") or "unnamed_rule"
+    return source_path.with_name(f"{safe_name}{source_path.suffix}")
+
+
 @lru_cache(maxsize=128)
 def get_rule_content(path: Path) -> str:
     """Reads and returns the content of a YARA rule file.
@@ -167,8 +173,8 @@ def process_rule_file(
 
                 logger.warning(f"{color}  {symbol} {key} = {value}{COLOUR_ENDC}")
 
-        if options.output == "inplace" and not errors:
-            # Change the rule content in place using the start and stop lines
+        if options.output in {"inplace", "createfile"} and not errors:
+            # Rebuild the rule and update the in-memory file buffer
             yara_rule_content_lines = yara_rule_content.splitlines()
             rule_start_line = rule.get("start_line", 1) - 1
             rule_stop_line = rule.get("stop_line", len(yara_rule_content_lines))
@@ -184,6 +190,13 @@ def process_rule_file(
                 + yara_rule_content_lines[rule_stop_line:]
             )
             yara_rule_content = "\n".join(yara_rule_content_lines)
+        elif options.output == "splitrules" and not errors:
+            # Write one file per rule, named after the rule itself
+            rule.pop("imports", None)
+            new_file_path = get_rule_output_path(rule["rule_name"], yara_rule_path)
+            logger.debug(f"Writing validated rule to new file for: {new_file_path}")
+            with open(new_file_path, "w", encoding="utf-8") as f:
+                f.write(rebuild_rule(rule))
 
     # After processing all rules in the file, write changes if applicable
     if options.output == "inplace":
@@ -192,12 +205,11 @@ def process_rule_file(
         with open(yara_rule_path, "w", encoding="utf-8") as f:
             f.write(yara_rule_content)
     elif options.output == "createfile":
-        # Write changes to a new file
+        # Write all validated rules to a single new file named after the source file
         new_file_path = yara_rule_path.with_name(f"{yara_rule_path.stem}_validated{yara_rule_path.suffix}")
-        logger.debug(f"Writing validated rule to new file for: {new_file_path}")
+        logger.debug(f"Writing validated rules to new file: {new_file_path}")
         with open(new_file_path, "w", encoding="utf-8") as f:
-            f.write(rebuild_rule(rule))
-
+            f.write(yara_rule_content)
     return total, failed
 
 
@@ -357,12 +369,13 @@ def main():
     validate_command.add_argument(
         "-o",
         "--output",
-        choices=["inplace", "createfile"],
+        choices=["inplace", "createfile", "splitrules"],
         required=False,
         dest="output",
         help="Decide how to handle output of validated rules. "
-        "Options are 'inplace' to modify files in place and "
-        "'createfile' to write validated rules to new files named after the rule.",
+        "Options are 'inplace' to modify files in place, "
+        "'createfile' to write all validated rules to a single new file named '<source>_validated.<ext>', and "
+        "'splitrules' to write each validated rule to its own file named after the rule.",
     )
     validate_command.add_argument(
         "--ignore-private-rules",
