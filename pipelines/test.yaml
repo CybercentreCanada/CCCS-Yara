@@ -10,10 +10,6 @@ jobs:
   - job: run_test
     strategy:
       matrix:
-        Python3_8:
-          python.version: "3.8"
-        Python3_9:
-          python.version: "3.9"
         Python3_10:
           python.version: "3.10"
         Python3_11:
