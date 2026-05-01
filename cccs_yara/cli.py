@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 import argparse
 import json
 import logging
@@ -8,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Tuple
 
 from cccs_yara.enrichment import Enricher
 from cccs_yara.main import rebuild_rule, validate_yara_rule
@@ -26,7 +23,16 @@ YARA_FILENAME_REGEX = re.compile(rf"({'|'.join(SUPPORTED_FILE_EXTENSIONS)})$".re
 
 
 def get_rule_output_path(rule_name: str, source_path: Path) -> Path:
-    """Build a filesystem-safe output path based on the YARA rule name."""
+    """Build a filesystem-safe output path based on the YARA rule name.
+
+    Args:
+        rule_name (str): The name of the YARA rule, which may contain characters unsafe for filenames.
+        source_path (Path): The original path of the YARA rule file, used as a base for the new file path.
+
+    Returns:
+        Path: The filesystem-safe path for the YARA rule.
+
+    """
     safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", rule_name).strip("._-") or "unnamed_rule"
     return source_path.with_name(f"{safe_name}{source_path.suffix}")
 
@@ -45,7 +51,7 @@ def get_rule_content(path: Path) -> str:
         return f.read()
 
 
-def get_paths_to_validate(options_paths: List[str], recursive: bool) -> List[Path]:
+def get_paths_to_validate(options_paths: list[str], recursive: bool) -> list[Path]:
     """Returns a set of pathlib.Path objects for all YARA rules that will be validated."""
     paths_to_validate = set()
 
@@ -103,7 +109,7 @@ def process_rule_file(
     validator_kwargs: dict,
     enricher: Enricher,
     logger: logging.Logger,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     total = 0
     failed = 0
 
@@ -133,14 +139,16 @@ def process_rule_file(
         if errors:
             failed += 1
             logger.error(
-                f"{COLOUR_FAIL}🍩 Invalid Rule File: {yara_rule_path}:{rule['start_line']} ({rule['rule_name']}){COLOUR_ENDC}"
+                f"{COLOUR_FAIL}🍩 Invalid Rule File: {yara_rule_path}:"
+                f"{rule['start_line']} ({rule['rule_name']}){COLOUR_ENDC}"
             )
             for error in errors:
                 logger.error(f"  - `{error['loc'][0]}` is invalid: {error['msg']}")
         else:
             # Print valid rule only
             logger.info(
-                f"{COLOUR_SUCCESS}   Valid Rule File: {yara_rule_path}:{rule['start_line']} ({rule['rule_name']}){COLOUR_ENDC}"
+                f"{COLOUR_SUCCESS}   Valid Rule File: {yara_rule_path}:"
+                f"{rule['start_line']} ({rule['rule_name']}){COLOUR_ENDC}"
             )
 
         # If no changes flag is set, skip writing changes but print what the changes would be
@@ -160,7 +168,7 @@ def process_rule_file(
                 f"{COLOUR_WARNING}🔧 Proposed Changes for: {yara_rule_path}:{rule['rule_name']} based on enrichment"
             )
             for change in new_metadata + removals:
-                key, value = list(change.items())[0]
+                key, value = next(change.items())
 
                 color = COLOUR_ENDC
                 symbol = " "
@@ -263,11 +271,11 @@ def execute_command(options):
                     process_rule_file,
                     yara_rule_path,
                     options,
-                    dict(
-                        validator_model=validator_model,
-                        default_metadata=default_metadata,
-                        filename=yara_rule_path.name,
-                    ),
+                    {
+                        "validator_model": validator_model,
+                        "default_metadata": default_metadata,
+                        "filename": yara_rule_path.name,
+                    },
                     enricher,
                     logger,
                 )
@@ -301,10 +309,10 @@ def execute_command(options):
 def main():
     print("""\
       ____ ____ ____ ____   __   __ _    ____      _
-     / ___/ ___/ ___/ ___|  \ \ / // \  |  _ \    / \\
-    | |  | |  | |   \___ \   \ V // _ \ | |_) |  / _ \\
-    | |__| |__| |___ ___) |   | |/ ___ \|  _ <  / ___ \\
-     \____\____\____|____/    |_/_/   \_\_| \_\/_/   \_\\
+     / ___/ ___/ ___/ ___|  \\ \\ / // \\  |  _ \\    / \\
+    | |  | |  | |   \\___ \\   \\ V // _ \\ | |_) |  / _ \\
+    | |__| |__| |___ ___) |   | |/ ___ \\|  _ <  / ___ \\
+     \\____\\____\\____|____/    |_/_/   \\_\\_| \\_\\/_/   \\_\\
      """)
 
     # Defining the parser and arguments to parse,

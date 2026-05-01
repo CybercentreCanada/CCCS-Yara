@@ -1,7 +1,6 @@
 # Main entry point for the YARA validator package
 import re
 from functools import lru_cache
-from typing import Dict, List, Tuple, Union
 
 from plyara import Plyara
 from plyara.utils import rebuild_yara_rule
@@ -24,12 +23,12 @@ def compile_aliases(pattern: str) -> re.Pattern:
 
 
 def validate_yara_rule(
-    rule_content: Union[str, dict],
-    default_metadata: dict = {},
+    rule_content: str | dict,
+    default_metadata: dict | None = None,
     validator_model: BaseModel = RuleValidatorModel,
-    field_aliases: Dict[str, str] = {"hash": "hash.*", "sharing": "classification", "date": "creation_date"},
+    field_aliases: dict[str, str] | None = None,
     filename: str = "",
-) -> List[Tuple[dict, List[dict]]]:
+) -> list[tuple[dict, list[dict]]]:
     """Validate a YARA rule file using the RuleValidatorModel.
 
     Args:
@@ -42,6 +41,12 @@ def validate_yara_rule(
     Returns:
         RuleValidatorModel: The validated YARA rule model.
     """
+    if not default_metadata:
+        default_metadata = {}
+
+    if not field_aliases:
+        field_aliases = {"hash": "hash.*", "sharing": "classification", "date": "creation_date"}
+
     if field_aliases:
         # Compile alias patterns
         field_aliases = {key: compile_aliases(pattern) for key, pattern in field_aliases.items()}
@@ -92,4 +97,4 @@ def rebuild_rule(rule):
         else:
             new_metadata.append({key: value})
     rule["metadata"] = new_metadata
-    return rebuild_yara_rule(rule).replace('\t', '    ') + "\n"
+    return rebuild_yara_rule(rule).replace("\t", "    ") + "\n"

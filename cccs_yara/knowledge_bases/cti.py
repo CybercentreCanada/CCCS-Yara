@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import List
 
 from git import Repo
 from mitreattack.stix20 import MitreAttackData
@@ -32,7 +31,7 @@ class CTIDatabase:
             repo.remotes.origin.pull()
 
         # Load each ATT&CK domain from its STIX bundle
-        self._datasets: List[MitreAttackData] = []
+        self._datasets: list[MitreAttackData] = []
         for domain in ATTACK_DOMAINS:
             bundle_path = os.path.join(clone_path, domain, f"{domain}.json")
             if os.path.exists(bundle_path):
@@ -57,7 +56,7 @@ class CTIDatabase:
                 aliases = getattr(group, "aliases", []) or []
                 self.actor_lookup.setdefault(group.name, []).extend(aliases)
 
-    def query(self, indicator: str, exhaustive_list: list[str] = None) -> list:
+    def query(self, indicator: str, exhaustive_list: None | list[str] = None) -> list:
         """Query the CTI database for a given indicator.
 
         Args:

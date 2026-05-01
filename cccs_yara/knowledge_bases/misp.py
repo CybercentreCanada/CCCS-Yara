@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from typing import List, Tuple, Union
 
 from git import Repo
 from pymispgalaxies import Cluster, Clusters, ClusterValue
@@ -13,8 +12,16 @@ logger = logging.getLogger(__name__)
 MISP_GALAXIES_GIT_URL = os.environ.get("MISP_GALAXIES_GIT_URL", "https://github.com/MISP/misp-galaxy.git")
 
 
-def _search_cluster(cluster: Cluster, query: str) -> List[ClusterValue]:
-    """Case-insensitive exact search across cluster values without monkey-patching."""
+def _search_cluster(cluster: Cluster, query: str) -> list[ClusterValue]:
+    """Case-insensitive exact search across cluster values without monkey-patching.
+
+    Args:
+        cluster (Cluster): The MISP cluster to search within.
+        query (str): The search query string.
+
+    Returns:
+        list[ClusterValue]: A list of ClusterValue objects that match the query.
+    """
     query_upper = query.upper()
     return [v for v in cluster.values() if query_upper in [s.upper() for s in v.searchable]]
 
@@ -22,20 +29,23 @@ def _search_cluster(cluster: Cluster, query: str) -> List[ClusterValue]:
 class MISP:
     def __init__(
         self,
-        clusters: List[str] = [
-            "backdoor",
-            "banker",
-            "botnet",
-            "cryptominers",
-            "microsoft-activity-group",
-            "rat",
-            "stealer",
-            "threat-actor",
-            "tidal-groups",
-            "tidal-software",
-            "tool",
-        ],
+        clusters: None | list[str] = None,
     ):
+        if clusters is None:
+            clusters = [
+                "backdoor",
+                "banker",
+                "botnet",
+                "cryptominers",
+                "microsoft-activity-group",
+                "rat",
+                "stealer",
+                "threat-actor",
+                "tidal-groups",
+                "tidal-software",
+                "tool",
+            ]
+
         # Initialize MISP clusters
         clone_path = os.path.join(WORKING_DIR, "misp-galaxy")
         if not os.path.exists(clone_path):
@@ -58,8 +68,16 @@ class MISP:
 
         self.clusters = Clusters(clusters_data)
 
-    def search(self, query: str) -> List[Tuple[Cluster, List[ClusterValue]]]:
-        """Search all loaded clusters for the given query (case-insensitive, exact match)."""
+    def search(self, query: str) -> list[tuple[Cluster, list[ClusterValue]]]:
+        """Search all loaded clusters for the given query (case-insensitive, exact match).
+
+        Args:
+            query (str): The search query string.
+
+        Returns:
+            list[tuple[Cluster, list[ClusterValue]]]: A list of tuples containing the cluster and the matching values.
+
+        """
         results = []
         for cluster in self.clusters.values():
             matches = _search_cluster(cluster, query)

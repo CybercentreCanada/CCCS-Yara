@@ -50,7 +50,7 @@ THREAT_ACTOR_PATTERN = re.compile(
                 APT_ACTOR_PATTERN,
             ]
         )
-    }$"""
+    }$"""  # noqa: FLY002
 )
 
 
@@ -76,7 +76,7 @@ class Enricher:
             try:
                 parsed_rule["metadata_kv"].setdefault(key, set()).add(value)
             except AttributeError:
-                parsed_rule["metadata_kv"][key] = set([parsed_rule["metadata_kv"][key], value])
+                parsed_rule["metadata_kv"][key] = {parsed_rule["metadata_kv"][key], value}
 
             # Further enrichment logic can be added here if needed
             if key == "actor":
