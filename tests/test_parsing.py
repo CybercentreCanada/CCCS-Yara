@@ -1,4 +1,3 @@
-import pytest
 from plyara import Plyara
 
 

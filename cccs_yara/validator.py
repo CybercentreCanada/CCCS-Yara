@@ -1,6 +1,6 @@
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 
 import baseconv
@@ -56,11 +56,11 @@ def transform_version(version_str: str) -> str:
 def transform_date(date_str: str) -> str:
     if not date_str:
         # If the date string is empty, return the current date
-        return datetime.now(tz=datetime.timezone.utc).strftime("%Y-%m-%d")
+        return datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
     for date_format in DATE_FORMATS:
         try:
             # Convert the date string to a standardized format
-            parsed_date = datetime.strptime(date_str, date_format).replace(tzinfo=datetime.timezone.utc)
+            parsed_date = datetime.strptime(date_str, date_format).replace(tzinfo=timezone.utc)
             return parsed_date.strftime("%Y-%m-%d")
         except Exception:  # noqa: BLE001, S112
             continue
@@ -86,7 +86,7 @@ class RuleValidatorModel(BaseModel, extra="allow"):
                 elif isinstance(data[key], list):
                     data[key] = set(data[key])
                 else:
-                    data[key] = {[data[key]]}
+                    data[key] = {data[key]}
 
         # Preserve all original metadata fields using keys with "original_"
         for key, value in list(data.items()):

@@ -168,7 +168,7 @@ def process_rule_file(
                 f"{COLOUR_WARNING}🔧 Proposed Changes for: {yara_rule_path}:{rule['rule_name']} based on enrichment"
             )
             for change in new_metadata + removals:
-                key, value = next(change.items())
+                key, value = next(iter(change.items()))
 
                 color = COLOUR_ENDC
                 symbol = " "
