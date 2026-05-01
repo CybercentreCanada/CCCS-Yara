@@ -77,20 +77,14 @@ CATEGORY_KEYWORDS = {
 }
 
 ACTOR_TYPE_KEYWORDS = {
-    "APT": ["APT", "NATION-STATE", "STATE-SPONSORED"],
-    "CRIMEWARE": [
-        "CRIMEWARE",
-        "CYBERCRIME",
-        "CYBER-CRIME",
-        "THEFT",
-    ],
+    "APT": ["APT", "ADVANCED PERSISTENT THREAT", "NATION STATE", "NATION-STATE", "STATE-SPONSORED"],
+    "CRIMEWARE": ["CRIMEWARE", "CYBERCRIME", "CYBER-CRIME", "THEFT"],
     "FIN": ["FIN", "FINANCIAL-GAIN", "FINANCIAL", "FINANCIALLY"],
 }
 
 # Mapping of malware types to possible keywords found in YARA rule metadata
 MALWARE_TYPE_KEYWORDS = {
     # Each malware type maps to a list of keywords/phrases that may be found in YARA rule metadata
-    "APT": ["APT", "ADVANCED PERSISTENT THREAT", "NATION STATE", "NATION-STATE", "STATE-SPONSORED"],
     "ADWARE": ["ADWARE"],
     "BACKDOOR": ["BACKDOOR", "REMOTE ACCESS", "BKDR"],
     "BANKER": ["BANKER", "BANKING TROJAN"],

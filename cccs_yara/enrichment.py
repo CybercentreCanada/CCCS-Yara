@@ -69,6 +69,10 @@ class Enricher:
 
         # Helper function to add metadata and optionally enrich further depending on the data
         def add_metadata(key: str, value: str):
+            value = value.strip()
+            if not value:
+                return
+
             try:
                 parsed_rule["metadata_kv"].setdefault(key, set()).add(value)
             except AttributeError:
