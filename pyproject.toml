@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "cccs-yara"
 description = "A CCCS utility for YARA rule metadata validation"
 dynamic = ["version", "readme", "dependencies"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "cccs-rs" }]
 maintainers = [{ name = "cccs-rs" }]
 license = { file = "LICENSE.md" }
@@ -18,9 +18,9 @@ classifiers = [
 
     "License :: OSI Approved :: MIT License",
 
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [project.scripts]
