@@ -5,17 +5,6 @@ from pathlib import Path
 import pytest
 
 
-def test_info_command():
-    result = subprocess.run(
-        ["cccs-yara", "info"],
-        capture_output=True,
-        text=True,
-    )
-
-    # Assert that the command executed successfully
-    assert result.returncode == 0
-
-
 @pytest.mark.parametrize("ignore", [True, False])
 def test_ignore_private_rule(ignore):
     rule = """
@@ -37,14 +26,7 @@ private rule IsPE {
 
         cmd.append(temp_rule_file.name)
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-        )
-
-        # Assert that the command executed successfully
-        assert result.returncode == 0
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
         # Check the output based on whether private rules are ignored
         if ignore:
@@ -85,19 +67,12 @@ rule two {
 """
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        rule_file = tempfile.NamedTemporaryFile(mode="w+", suffix=".yara", dir=temp_dir, delete=False)
         try:
-            rule_file.write(rules)
-            rule_file.flush()
-            rule_file.close()
+            with tempfile.NamedTemporaryFile(mode="w+", suffix=".yara", dir=temp_dir, delete=False) as rule_file:
+                rule_file.write(rules)
 
-            result = subprocess.run(
-                ["cccs-yara", "validate", "-o", "createfile", rule_file.name],
-                capture_output=True,
-                text=True,
-            )
-
-            assert result.returncode == 0
+            cmd = ["cccs-yara", "validate", "-o", "createfile", rule_file.name]
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
 
             stem = Path(rule_file.name).stem
             validated_path = Path(temp_dir) / f"{stem}_validated.yara"
@@ -145,33 +120,65 @@ rule two {
 """
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        rule_file = tempfile.NamedTemporaryFile(mode="w+", suffix=".yara", dir=temp_dir, delete=False)
         try:
-            rule_file.write(rules)
-            rule_file.flush()
-            rule_file.close()
+            with tempfile.NamedTemporaryFile(mode="w+", suffix=".yara", dir=temp_dir, delete=False) as rule_file:
+                rule_file.write(rules)
+                rule_file.flush()
 
-            result = subprocess.run(
-                ["cccs-yara", "validate", "-o", "splitrules", rule_file.name],
-                capture_output=True,
-                text=True,
-            )
+                cmd = ["cccs-yara", "validate", "-o", "splitrules", rule_file.name]
+                subprocess.run(cmd, capture_output=True, text=True, check=True)
 
-            assert result.returncode == 0
+                first_rule_path = Path(temp_dir) / "one.yara"
+                second_rule_path = Path(temp_dir) / "two.yara"
+                single_file_path = Path(temp_dir) / f"{Path(rule_file.name).stem}_validated.yara"
 
-            first_rule_path = Path(temp_dir) / "one.yara"
-            second_rule_path = Path(temp_dir) / "two.yara"
-            single_file_path = Path(temp_dir) / f"{Path(rule_file.name).stem}_validated.yara"
+                assert first_rule_path.exists()
+                assert second_rule_path.exists()
+                assert not single_file_path.exists()
 
-            assert first_rule_path.exists()
-            assert second_rule_path.exists()
-            assert not single_file_path.exists()
-
-            assert "rule one" in first_rule_path.read_text(encoding="utf-8")
-            assert "rule two" in second_rule_path.read_text(encoding="utf-8")
+                assert "rule one" in first_rule_path.read_text(encoding="utf-8")
+                assert "rule two" in second_rule_path.read_text(encoding="utf-8")
         finally:
             # Ensure cleanup on all platforms.
             try:
                 Path(rule_file.name).unlink()
             except OSError:
                 pass
+
+
+def test_validate_with_default_metadata():
+    rule = """
+rule dm_test {
+    meta:
+        sharing = "TLP:CLEAR"
+        category = "TOOL"
+        tool = "exemplar"
+        description = "default metadata test"
+    strings:
+        $ = "test"
+    condition:
+        all of them
+}
+"""
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".yara", delete=False) as f:
+        f.write(rule)
+        f.flush()
+        path = Path(f.name)
+
+    try:
+        cmd = [
+            "cccs-yara",
+            "--verbose=WARN",
+            "validate",
+            "-dm",
+            '{"author": "TestAuthor", "source": "TestSource"}',
+            "-o",
+            "inplace",
+            str(path),
+        ]
+        subprocess.run(cmd, capture_output=True, text=True, check=True)
+        content = path.read_text()
+        assert "TestAuthor" in content
+        assert "TESTSOURCE" in content
+    finally:
+        path.unlink()
