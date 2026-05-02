@@ -9,31 +9,32 @@ from cccs_yara.knowledge_bases.lazarusholic import ACTOR_NAMES as LAZARUSHOLIC_A
 from cccs_yara.knowledge_bases.malpedia import Malpedia
 from cccs_yara.knowledge_bases.misp import MISP
 
-# File path prefix to category mapping for fallback inference
+# File path prefix to metadata mapping for fallback inference
 # Order matters: more specific prefixes should come first
-FILE_PREFIX_CATEGORY_MAP = [
-    ("apt_", "MALWARE"),
-    ("mal_", "MALWARE"),
-    ("crime_", "MALWARE"),
-    ("bkdr_", "MALWARE"),
-    ("spy_", "MALWARE"),
-    ("thor-webshells", "MALWARE"),
-    ("webshell_", "MALWARE"),
-    ("pua_", "MALWARE"),
-    ("pup_", "MALWARE"),
-    ("expl_", "EXPLOIT"),
-    ("exploit_", "EXPLOIT"),
-    ("vul_", "EXPLOIT"),
-    ("vuln_", "EXPLOIT"),
-    ("hktl_", "TOOL"),
-    ("htkl_", "TOOL"),
-    ("thor-hacktools", "TOOL"),
-    ("gen_", "INFO"),
-    ("general_", "INFO"),
-    ("generic_", "INFO"),
-    ("susp_", "INFO"),
-    ("log_", "INFO"),
-]
+FILE_PREFIX_METADATA_MAP = {
+    "apt_": {"category": "MALWARE", "actor_type": "APT"},
+    "mal_": {"category": "MALWARE"},
+    "ran_": {"category": "MALWARE", "malware_type": "RANSOMWARE"},
+    "crime_": {"category": "MALWARE", "actor_type": "CRIMEWARE"},
+    "bkdr_": {"category": "MALWARE", "malware_type": "BACKDOOR"},
+    "spy_": {"category": "MALWARE", "malware_type": "SPYWARE"},
+    "thor-webshells": {"category": "MALWARE", "malware_type": "WEBSHELL"},
+    "webshell_": {"category": "MALWARE", "malware_type": "WEBSHELL"},
+    "pua_": {"category": "MALWARE"},
+    "pup_": {"category": "MALWARE"},
+    "expl_": {"category": "EXPLOIT"},
+    "exploit_": {"category": "EXPLOIT"},
+    "vul_": {"category": "EXPLOIT"},
+    "vuln_": {"category": "EXPLOIT"},
+    "hktl_": {"category": "TOOL"},
+    "htkl_": {"category": "TOOL"},
+    "thor-hacktools": {"category": "TOOL"},
+    "gen_": {"category": "INFO"},
+    "general_": {"category": "INFO"},
+    "generic_": {"category": "INFO"},
+    "susp_": {"category": "INFO"},
+    "log_": {"category": "INFO"},
+}
 
 # PaloAlto Unit 42 actor pattern format
 # Ref: https://unit42.paloaltonetworks.com/unit-42-attribution-framework/
@@ -361,9 +362,9 @@ class Enricher:
         # Fallback: infer category from the file path prefix if still not determined
         if "category" not in parsed_rule["metadata_kv"]:
             filename = parsed_rule.get("filename", "").rsplit("/", 1)[-1].lower()
-            for prefix, cat in FILE_PREFIX_CATEGORY_MAP:
+            for prefix, metadata in FILE_PREFIX_METADATA_MAP.items():
                 if filename.startswith(prefix):
-                    parsed_rule["metadata_kv"]["category"] = cat
+                    parsed_rule["metadata_kv"].update(metadata)
                     break
 
         # Handle misattribution of malware and actor metadata by checking for conflicting terms
