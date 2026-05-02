@@ -139,12 +139,15 @@ class RuleValidatorModel(BaseModel, extra="allow"):
             description = "Detects "
             if data.get("malware"):
                 description += f"{', '.join(data['malware'])} samples "
+            elif data.get("category") == "VULNERABILITY":
+                description += "vulnerabilities "
             else:
                 description += "samples "
+
             if data.get("actor"):
                 description += f"used by {', '.join(data['actor'])}."
 
-            data["description"] = description
+            data["description"] = description.strip()
 
         return data
 
