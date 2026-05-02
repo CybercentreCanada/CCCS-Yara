@@ -9,6 +9,32 @@ from cccs_yara.knowledge_bases.lazarusholic import ACTOR_NAMES as LAZARUSHOLIC_A
 from cccs_yara.knowledge_bases.malpedia import Malpedia
 from cccs_yara.knowledge_bases.misp import MISP
 
+# File path prefix to category mapping for fallback inference
+# Order matters: more specific prefixes should come first
+FILE_PREFIX_CATEGORY_MAP = [
+    ("apt_", "MALWARE"),
+    ("mal_", "MALWARE"),
+    ("crime_", "MALWARE"),
+    ("bkdr_", "MALWARE"),
+    ("spy_", "MALWARE"),
+    ("thor-webshells", "MALWARE"),
+    ("webshell_", "MALWARE"),
+    ("pua_", "MALWARE"),
+    ("pup_", "MALWARE"),
+    ("expl_", "EXPLOIT"),
+    ("exploit_", "EXPLOIT"),
+    ("vul_", "EXPLOIT"),
+    ("vuln_", "EXPLOIT"),
+    ("hktl_", "TOOL"),
+    ("htkl_", "TOOL"),
+    ("thor-hacktools", "TOOL"),
+    ("gen_", "INFO"),
+    ("general_", "INFO"),
+    ("generic_", "INFO"),
+    ("susp_", "INFO"),
+    ("log_", "INFO"),
+]
+
 # PaloAlto Unit 42 actor pattern format
 # Ref: https://unit42.paloaltonetworks.com/unit-42-attribution-framework/
 PALO_ALTO_UNIT42_ACTOR_PATTERN = r"CL-(UNK|STA|CRI|MIX)-\d{4}"
@@ -149,14 +175,24 @@ class Enricher:
                 # If malware type has been determined, set category to MALWARE
                 parsed_rule["metadata_kv"]["category"] = "MALWARE"
 
-        def find_best_lookup_match(lookup_items: list[tuple[str, list[str]]]) -> str | None:
+        def find_best_lookup_match(
+            lookup_items: list[tuple[str, list[str]]], exclude_terms: set[str] | None = None
+        ) -> str | None:
             """Return the most specific lookup match for the current candidate terms."""
+            if exclude_terms is None:
+                exclude_terms = set()
+
             best_name = None
             best_score = 0
 
+            if exclude_terms:
+                effective_candidates = normalized_candidate_terms - exclude_terms
+            else:
+                effective_candidates = normalized_candidate_terms
+
             for entry_name, entry_synonyms in lookup_items:
                 normalized_lookup_terms = {term.replace(" ", "").upper() for term in entry_synonyms + [entry_name]}
-                matched_terms = normalized_lookup_terms.intersection(normalized_candidate_terms)
+                matched_terms = normalized_lookup_terms.intersection(effective_candidates)
                 if not matched_terms:
                     continue
 
@@ -264,20 +300,25 @@ class Enricher:
             if set(candidate_terms).intersection(set(keywords)):
                 add_metadata("actor_type", actor_type)
 
+        # Collect all known actor names/aliases to avoid malware misattribution
+        actor_lookup_items = list(self.malpedia.actor_lookup.items()) + list(self.mitre.actor_lookup.items())
+        actor_name_terms = set()
+        for entry_name, entry_synonyms in actor_lookup_items:
+            actor_name_terms.update(term.replace(" ", "").upper() for term in entry_synonyms + [entry_name])
+
         # Rely on knowledge bases to enrich the rule metadata
         malware_match = find_best_lookup_match(
-            list(self.malpedia.malware_lookup.items()) + list(self.mitre.malware_lookup.items())
+            list(self.malpedia.malware_lookup.items()) + list(self.mitre.malware_lookup.items()),
+            exclude_terms=actor_name_terms,
         )
         if malware_match:
             add_metadata("malware", malware_match.upper())
 
-        tool_match = find_best_lookup_match(list(self.mitre.tool_lookup.items()))
+        tool_match = find_best_lookup_match(list(self.mitre.tool_lookup.items()), exclude_terms=actor_name_terms)
         if tool_match and "malware" not in parsed_rule["metadata_kv"]:
             add_metadata("malware", tool_match.upper())
 
-        actor_match = find_best_lookup_match(
-            list(self.malpedia.actor_lookup.items()) + list(self.mitre.actor_lookup.items())
-        )
+        actor_match = find_best_lookup_match(actor_lookup_items)
         if actor_match:
             add_metadata("actor", actor_match.upper())
 
@@ -316,6 +357,14 @@ class Enricher:
                         # Assign category based on keywords found in the rule metadata
                         parsed_rule["metadata_kv"]["category"] = category
                         break
+
+        # Fallback: infer category from the file path prefix if still not determined
+        if "category" not in parsed_rule["metadata_kv"]:
+            filename = parsed_rule.get("filename", "").rsplit("/", 1)[-1].lower()
+            for prefix, cat in FILE_PREFIX_CATEGORY_MAP:
+                if filename.startswith(prefix):
+                    parsed_rule["metadata_kv"]["category"] = cat
+                    break
 
         # Handle misattribution of malware and actor metadata by checking for conflicting terms
         if "COBALT" in parsed_rule["metadata_kv"].get("actor", []) and "COBALT STRIKE" in parsed_rule[
