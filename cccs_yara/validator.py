@@ -201,7 +201,15 @@ class RuleValidatorModel(BaseModel, extra="allow"):
 
     sharing: Annotated[
         str,
-        BeforeValidator(lambda x: "TLP:CLEAR" if x == "TLP:WHITE" else x),
+        BeforeValidator(
+            lambda x: (
+                "TLP:CLEAR"
+                if x.upper() in ("TLP:WHITE", "TLP:CLEAR")
+                else x.upper()
+                if x.upper().startswith("TLP:")
+                else x
+            )
+        ),
         StringConstraints(pattern=r"^TLP:(CLEAR|GREEN|AMBER\+STRICT|AMBER)(\/\/COMMERCIAL)?$"),
     ] = Field(
         description="Sharing level of the rule indicating its accessibility.",
