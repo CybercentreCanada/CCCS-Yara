@@ -373,6 +373,19 @@ mitre_att:
    optional: Yes
    validator: valid_mitre_att
 
+agent_threat_rule_id:
+   description: "Optional cross-reference to an Agent Threat Rules (ATR) detection rule
+      (https://github.com/Agent-Threat-Rule/agent-threat-rules). Lets YARA rules covering
+      AI-agent-related artefacts surface their relationship to a corresponding open ATR
+      runtime detection rule where one exists. Optional and additive: rules without an
+      ATR cross-reference validate unchanged."
+   format: "'ATR-YYYY-NNNNN'"
+   unique: No
+   optional: Yes
+   validator: valid_regex
+   argument:
+      regexExpression: ^ATR-\d{4}-\d{5}$
+
 actor_type:
    description: "The type of the actor"
    format: "uppercase"

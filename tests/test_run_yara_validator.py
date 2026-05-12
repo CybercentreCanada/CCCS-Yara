@@ -66,6 +66,50 @@ def test_required_fields():
             assert fingerprint and id
 
 
+ATR_CROSSREF_RULE = b"""
+rule atr_crossref
+{
+    meta:
+        version = "1.0"
+        score = "0"
+        minimum_yara = "3.5"
+        date = "2024-05-07"
+        modified = "2024-05-07"
+        status = "RELEASED"
+        sharing = "TLP:CLEAR"
+        author = "CCCS"
+        description = "Fake rule for testing optional ATR cross-reference"
+        category = "TOOL"
+        tool = "exemplar"
+        source = "CCCS"
+        agent_threat_rule_id = "ATR-2026-00440"
+    strings:
+        $ = "x"
+    condition:
+        all of them
+}
+"""
+
+
+def test_atr_crossref_field_accepted():
+    # The optional agent_threat_rule_id field should validate when an ATR ID
+    # in the form ATR-YYYY-NNNNN is provided. The field is additive: rules
+    # without it continue to validate (covered by test_required_fields).
+    with NamedTemporaryFile() as tf:
+        tf.write(ATR_CROSSREF_RULE)
+        tf.seek(0)
+
+        rules = list(
+            run_yara_validator(tf.name, generate_values=True).yara_rules
+        )
+        assert len(rules) == 1
+        atr_id = None
+        for m in rules[0].rule_plyara["metadata"]:
+            if "agent_threat_rule_id" in m:
+                atr_id = m["agent_threat_rule_id"]
+        assert atr_id == "ATR-2026-00440"
+
+
 NO_METADATA_RULE = b"""
 rule no_metadata {
     strings:
