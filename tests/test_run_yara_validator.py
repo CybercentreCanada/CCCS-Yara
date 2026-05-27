@@ -76,6 +76,18 @@ rule no_metadata {
 """
 
 
+VT_MODULE_RULE = b"""
+import "vt"
+
+rule Test_VT_Module {
+    condition:
+        vt.metadata.subfile
+        and vt.metadata.file_type == vt.FileType.XML
+        and  filesize < 5KB
+}
+"""
+
+
 @pytest.mark.parametrize("generate_values", [True, False])
 def test_no_metadata(generate_values):
     with NamedTemporaryFile() as tf:
@@ -99,3 +111,20 @@ def test_no_metadata(generate_values):
             else:
                 # Otherwise don't expect any metadata to be generated
                 assert "metadata" not in rule.rule_plyara
+
+
+def test_vt_module_rule_parses_and_metadata_is_validated():
+    with NamedTemporaryFile() as tf:
+        tf.write(VT_MODULE_RULE)
+        tf.seek(0)
+
+        processed_file = run_yara_validator(tf.name, generate_values=True)
+        assert len(processed_file.yara_rules) == 1
+
+        rule = processed_file.yara_rules[0]
+        assert "vt" in rule.rule_plyara["imports"]
+
+        validation_errors = rule.rule_return.return_errors()
+        assert "Missing required metadata" in validation_errors
+        assert "category" in validation_errors
+        assert "Error Compiling YARA file with yara" not in processed_file.return_file_errors()

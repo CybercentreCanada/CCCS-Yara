@@ -6,7 +6,8 @@ from pathlib import Path
 
 SYNTAX_ERRORS_INCLUDES = re.compile(r'.*can\'t open include file')
 SYNTAX_ERRORS_UNDEFINED_MODULES = re.compile(
-    r'.*undefined identifier (?="pe"|"elf"|"cuckoo"|"magic"|"hash"|"math"|"dotnet"|"time")')
+    r'.*undefined identifier (?="pe"|"elf"|"cuckoo"|"magic"|"hash"|"math"|"dotnet"|"time"|"vt")')
+SYNTAX_ERRORS_VT_MODULE_FIELDS = re.compile(r'.*invalid field name (?="metadata")')
 SYNTAX_ERRORS_UNDEFINED = re.compile(r'.*undefined identifier')
 
 class YaraFileProcessor:
@@ -72,6 +73,9 @@ class YaraFileProcessor:
             file_response = None
             error_string = str(e)
             if SYNTAX_ERRORS_INCLUDES.match(error_string):
+                pass
+            elif SYNTAX_ERRORS_VT_MODULE_FIELDS.match(error_string) and re.search(
+                    r'^\s*import\s+"vt"\s*$', self.original_rule_string, re.MULTILINE):
                 pass
             elif SYNTAX_ERRORS_UNDEFINED_MODULES.match(error_string):
                 if check_import_modules:
