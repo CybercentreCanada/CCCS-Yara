@@ -1,0 +1,44 @@
+{
+    "values": [
+        {
+            "value": "Agent Racoon",
+            "meta": {
+                "synonyms": [
+                    "AgentRacoon"
+                ],
+                "description": "Agent Racoon is implant used by APT29."
+            }
+        },
+        {
+            "value": "DoNot",
+            "meta": {
+                "synonyms": [
+                    "DONOT Team",
+                    "APT-C-35"
+                ],
+                "description": "DoNot is a remote access trojan used by the DoNot team."
+            }
+        },
+        {
+            "value": "Cobalt Strike",
+            "meta": {
+                "synonyms": [
+                    "CobaltStrike",
+                    "Cobalt Strike Beacon"
+                ],
+                "description": "Cobalt Strike is a commercial penetration testing tool."
+            }
+        },
+        {
+            "value": "Emotet",
+            "meta": {
+                "synonyms": [
+                    "Geodo",
+                    "Heodo",
+                    "Mealybug"
+                ],
+                "description": "Emotet is a modular malware that is primarily used as a downloader."
+            }
+        }
+    ]
+}
