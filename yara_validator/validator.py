@@ -20,6 +20,18 @@ from yara_validator.yara_file_processor import YaraFileProcessor
 # constants to deal with various required string comparisons
 SCOPES = 'scopes'
 GLOBAL = r'^global$'
+# constants to locate the metadata section of a rule, a section header may carry a trailing comment
+# index 0 is a valid line number so it cannot double as the not found marker
+SECTION_NOT_FOUND = -1
+# what str.find returns for a delimiter that is not on the line
+DELIMITER_NOT_FOUND = -1
+# what starts a comment outside of one, a quoted value is matched whole so a delimiter inside it is
+# skipped over
+OUTSIDE_COMMENT_TOKEN = re.compile(r'"(?:\\.|[^"\\])*"?|/\*|\*/|//')
+# the metadata section is regenerated, a block comment left open would lose its closing delimiter
+META_TRAILING_COMMENT = r'(?:\s*/\*(?:[^*]|\*(?!/))*\*/)*\s*(?://.*)?$'
+# the section following the metadata is kept as is, a block comment may close on any later line
+SECTION_TRAILING_COMMENT = r'\s*(?://.*|/\*.*)?$'
 
 # constants to store the string metadata used to reference to particular important metadata
 METADATA = 'metadata'
@@ -273,25 +285,70 @@ class YaraValidatorReturn:
         :return: a tuple of the array of lines for the rule processed, and a list of start and end of meta indices
         """
         rule_to_process_lines = rule_to_process.splitlines()
-        meta_offsets = []
-        meta_start = 0
-        meta_end = 0
-        meta_regex = r'^\s*meta\s*:\s*$'
-        next_section = r'^\s*(?:strings|condition)\s*:\s*$'
+        meta_start = SECTION_NOT_FOUND
+        meta_end = SECTION_NOT_FOUND
+        meta_regex = r'^\s*meta\s*:' + META_TRAILING_COMMENT
+        next_section = r'^\s*(?:strings|condition)\s*:' + SECTION_TRAILING_COMMENT
+        in_block_comment = False
 
         for index, line in enumerate(rule_to_process_lines):
-            if re.match(meta_regex, line):
+            line_starts_commented = in_block_comment
+            in_block_comment, _ = self.__block_comment_state(line, in_block_comment)
+            # matching a commented out header splices the metadata over the delimiters of the comment
+            if line_starts_commented:
+                continue
+
+            if meta_start == SECTION_NOT_FOUND and re.match(meta_regex, line):
                 meta_start = index
-            elif re.match(next_section, line) and meta_start > 0:
+            elif re.match(next_section, line) and meta_start != SECTION_NOT_FOUND:
                 meta_end = index
                 break
 
         return rule_to_process_lines, meta_start, meta_end
 
+    def __block_comment_state(self, line, in_block_comment):
+        """
+        Tracks the block comment a line leaves open, a line of a rule is only a header, a string or a
+            metadata value if it does not sit inside a comment. The line is scanned from left to
+            right so that a delimiter quoted in a metadata value is not taken for a comment, and a
+            quote sitting inside a comment is not taken for the start of a value.
+        :param line: the line to scan
+        :param in_block_comment: True if the preceding lines left a block comment open
+        :return: a tuple of the state of the block comment at the end of the line and of whether the
+            line closes a block comment that none of the lines scanned so far opened
+        """
+        unmatched_close = False
+        index = 0
+
+        while index < len(line):
+            if in_block_comment:
+                closing = line.find('*/', index)
+                if closing == DELIMITER_NOT_FOUND:
+                    break
+                in_block_comment = False
+                index = closing + 2
+            else:
+                outside_comment = OUTSIDE_COMMENT_TOKEN.search(line, index)
+                if outside_comment is None:
+                    break
+
+                token = outside_comment.group()
+                if token == '//':
+                    break
+                if token == '*/':
+                    unmatched_close = True
+                    break
+
+                in_block_comment = token == '/*'
+                index = outside_comment.end()
+
+        return in_block_comment, unmatched_close
+
     def rebuild_rule(self):
         """
         Rebuilds the rule if it is valid and as long as there are any changes. This was created to maintain
-            any comments outside of the metadata section
+            any comments outside of the metadata section. A rule the metadata cannot be spliced into
+            is kept as it is.
         :return: No return
         """
 
@@ -303,15 +360,53 @@ class YaraValidatorReturn:
         yara_valid_lines, yara_valid_meta_start, yara_valid_meta_end = self.__find_meta_start_end(self.rule_to_validate)
         yara_cccs_lines, yara_cccs_meta_start, yara_cccs_meta_end = self.__find_meta_start_end(self.validated_rule)
 
-        yara_new_file = []
-        if yara_valid_meta_start != 0 and yara_valid_meta_end != 0 and yara_cccs_meta_start != 0 and yara_cccs_meta_end != 0:
-            yara_new_file = yara_valid_lines[0:yara_valid_meta_start] + yara_cccs_lines[
-                yara_cccs_meta_start:yara_cccs_meta_end] + yara_valid_lines[
-                yara_valid_meta_end:]
-            yara_new_file = '\n'.join(yara_new_file)
+        offsets = (yara_valid_meta_start, yara_valid_meta_end, yara_cccs_meta_start, yara_cccs_meta_end)
+        # the rule the metadata rebuild produced carries none of the comments of the original, and the
+        # imports and the spacing plyara regenerates, so the original is kept when the splice is off
+        if any(offset == SECTION_NOT_FOUND for offset in offsets):
+            self.validated_rule = self.rule_to_validate
+            return
 
-        if self.rule_to_validate != yara_new_file:
-            self.validated_rule = yara_new_file
+        if not self.__replaced_region_is_metadata(yara_valid_lines, yara_valid_meta_start,
+                                                  yara_valid_meta_end):
+            self.validated_rule = self.rule_to_validate
+            return
+
+        # the original metadata header line is kept so a trailing comment on it survives
+        yara_new_file = yara_valid_lines[0:yara_valid_meta_start + 1] + yara_cccs_lines[
+            yara_cccs_meta_start + 1:yara_cccs_meta_end] + yara_valid_lines[
+            yara_valid_meta_end:]
+        self.validated_rule = '\n'.join(yara_new_file)
+
+    def __replaced_region_is_metadata(self, original_lines, meta_start, meta_end):
+        """
+        Verifies that the range of lines about to be replaced by the regenerated metadata holds
+            nothing but metadata. A string definition or a further section header inside that range
+            means the end offset overshot the metadata section, and splicing over it would delete
+            rule content.
+        :param original_lines: the lines of the rule before the rebuild
+        :param meta_start: index of the metadata section header in the original rule
+        :param meta_end: index of the section following the metadata in the original rule
+        :return: True if the range to be replaced contains only metadata, comments and blank lines
+            and no block comment crosses either end of the range
+        """
+        in_block_comment = False
+
+        for line in original_lines[meta_start + 1:meta_end]:
+            line_starts_commented = in_block_comment
+            in_block_comment, unmatched_close = self.__block_comment_state(line, in_block_comment)
+            # a closing delimiter with no opener in the range closes a comment that starts before it
+            if unmatched_close:
+                return False
+
+            stripped = line.strip()
+            if line_starts_commented or not stripped or stripped.startswith('//'):
+                continue
+            if stripped.startswith('$') or re.match(r'^\s*(?:meta|strings|condition)\s*:', line):
+                return False
+
+        # a comment left open by the range loses the closing delimiter that follows it
+        return not in_block_comment
 
 
 class MetadataAttributes:
