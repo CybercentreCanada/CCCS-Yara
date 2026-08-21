@@ -218,9 +218,15 @@ class Enricher:
         # Include tags as candidate terms
         candidate_terms.update([tag.upper() for tag in parsed_rule.get("tags", [])])
 
+        # Check if a filename is provided
+        filename = parsed_rule.get("filename", "")
+        if "filename" in parsed_rule:
+            # Ensure extensions are removed as it might conflict with name lookups
+            filename = filename.rsplit(".", 1)[0]
+
         # Include metadata values as candidate terms
         for meta_key, meta_value in list(parsed_rule["metadata_kv"].items()) + [
-            ("filename", parsed_rule.get("filename", "")),
+            ("filename", filename),
         ]:
             if meta_key in ["fingerprint", "id", "version"]:
                 continue
@@ -285,6 +291,7 @@ class Enricher:
         ]
         normalized_candidate_terms = {term.replace(" ", "").upper() for term in candidate_terms}
 
+        # Check if any term matches known threat actor patterns and add to metadata if found
         for term in candidate_terms:
             match_found = THREAT_ACTOR_PATTERN.match(term)
             if match_found:
@@ -353,15 +360,25 @@ class Enricher:
                 # Ensure category is set to MALWARE if malware_type is present
                 parsed_rule["metadata_kv"]["category"] = "MALWARE"
             else:
+                # Attempt to infer category based on keywords in the rule metadata
                 for category, keywords in CATEGORY_KEYWORDS.items():
                     if set(keywords).intersection(set(candidate_terms)):
                         # Assign category based on keywords found in the rule metadata
                         parsed_rule["metadata_kv"]["category"] = category
                         break
+                if "category" not in parsed_rule["metadata_kv"]:
+                    # If still not determined, check for known malware types in the metadata
+                    for malware_type in MALWARE_TYPE_KEYWORDS:
+                        # Catch cases where the malware name mentions the malware type ie. DridexLoader
+                        for term in candidate_terms:
+                            if term.endswith(malware_type):
+                                parsed_rule["metadata_kv"]["category"] = "MALWARE"
+                                parsed_rule["metadata_kv"]["malware_type"] = malware_type
+                                add_metadata("malware", term)
+                                break
 
         # Fallback: infer category from the file path prefix if still not determined
         if "category" not in parsed_rule["metadata_kv"]:
-            filename = parsed_rule.get("filename", "").rsplit("/", 1)[-1].lower()
             for prefix, metadata in FILE_PREFIX_METADATA_MAP.items():
                 if filename.startswith(prefix):
                     parsed_rule["metadata_kv"].update(metadata)

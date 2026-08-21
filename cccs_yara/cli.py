@@ -318,7 +318,7 @@ def execute_command(options):
                     logger.error(f"  - {BOLD}{error['loc'][0]}{RESET} is invalid: {error['msg']}")
             elif result["status"] == "valid":
                 logger.info(
-                    f"{COLOUR_SUCCESS}   Valid Rule File: {result['path']}:{result['start_line']} "
+                    f"{COLOUR_SUCCESS}🚀 Valid Rule File: {result['path']}:{result['start_line']} "
                     f"({result['rule_name']}){RESET}"
                 )
 

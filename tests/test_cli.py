@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -186,8 +187,15 @@ rule dm_test {
         path.unlink()
 
 
-@pytest.mark.parametrize("repository", ["https://github.com/BartBlaze/Yara-rules.git"], ids=["BartBlaze/Yara-rules"])
-def test_public_rulesets(repository):
+@pytest.mark.parametrize(
+    "repository,paths",
+    [
+        ("https://github.com/BartBlaze/Yara-rules.git", [""]),
+        ("https://github.com/kevoreilly/CAPEv2.git", ["analyzer/windows/data/yara", "data/yara"]),
+    ],
+    ids=["BartBlaze/Yara-rules", "kevoreilly/CAPEv2"],
+)
+def test_public_rulesets(repository, paths):
     """Test enrichment on a set of public YARA rules."""
     default_metadata = {"classification": "TLP:CLEAR", "source": repository.split("/", 4)[3]}
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -195,6 +203,7 @@ def test_public_rulesets(repository):
         Repo.clone_from(repository, temp_dir, depth=1)
 
         # Run the CLI command to validate and enrich the rules in the cloned repository
+        rule_paths = [os.path.join(temp_dir, p) for p in paths]
         cmd = [
             "cccs-yara",
             "validate",
@@ -203,8 +212,7 @@ def test_public_rulesets(repository):
             "--json",  # Product JSON report for analysis
             "-dm",  # Insert default metadata for enrichment
             json.dumps(default_metadata),
-            temp_dir,
-        ]
+        ] + rule_paths
         p = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
         # Ensure the command completed successfully
