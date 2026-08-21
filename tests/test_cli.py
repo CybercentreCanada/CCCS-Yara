@@ -192,8 +192,9 @@ rule dm_test {
     [
         ("https://github.com/BartBlaze/Yara-rules.git", [""]),
         ("https://github.com/kevoreilly/CAPEv2.git", ["analyzer/windows/data/yara", "data/yara"]),
+        ("https://github.com/StrangerealIntel/DailyIOC.git", [""]),
     ],
-    ids=["BartBlaze/Yara-rules", "kevoreilly/CAPEv2"],
+    ids=["BartBlaze/Yara-rules", "kevoreilly/CAPEv2", "StrangerealIntel/DailyIOC"],
 )
 def test_public_rulesets(repository, paths):
     """Test enrichment on a set of public YARA rules."""

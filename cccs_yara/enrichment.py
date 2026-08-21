@@ -380,7 +380,7 @@ class Enricher:
         # Fallback: infer category from the file path prefix if still not determined
         if "category" not in parsed_rule["metadata_kv"]:
             for prefix, metadata in FILE_PREFIX_METADATA_MAP.items():
-                if filename.startswith(prefix):
+                if filename.lower().startswith(prefix):
                     parsed_rule["metadata_kv"].update(metadata)
                     break
 
