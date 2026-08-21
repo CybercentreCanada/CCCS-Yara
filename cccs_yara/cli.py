@@ -4,6 +4,7 @@ import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
+from importlib.metadata import version
 from pathlib import Path
 from textwrap import dedent
 
@@ -15,8 +16,8 @@ from cccs_yara.validator import RuleValidatorModel
 COLOUR_SUCCESS = "\033[92m"
 COLOUR_WARNING = "\033[93m"
 COLOUR_FAIL = "\033[91m"
-COLOUR_ENDC = "\033[0m"
-
+RESET = "\033[0m"
+BOLD = "\033[1m"
 
 SUPPORTED_FILE_EXTENSIONS = [".yar", ".yara", ".rules"]
 YARA_FILENAME_REGEX = re.compile(rf"({'|'.join(SUPPORTED_FILE_EXTENSIONS)})$".replace(".", r"\."))
@@ -100,7 +101,7 @@ def print_standard(validator_model: RuleValidatorModel):
                 print(f"  {property_key}: {property_value}")
 
     # Reset terminal color
-    print(COLOUR_ENDC)
+    print(RESET)
 
 
 def process_rule_file(
@@ -121,13 +122,14 @@ def process_rule_file(
     )
 
     yara_rule_content = get_rule_content(yara_rule_path)
+    results = []
     for rule, errors in validate_yara_rule(yara_rule_content, **validator_kwargs)[::-1]:
         total += 1
+        result = {"path": str(yara_rule_path), "rule_name": rule["rule_name"], "start_line": rule["start_line"]}
         # If ignoring private rules and the rule is private, skip validation
         if options.ignore_private_rules and "private" in rule.get("scopes", []):
-            logger.warning(
-                f"{COLOUR_WARNING}   Skipping Private Rule: {yara_rule_path}:{rule['rule_name']}{COLOUR_ENDC}"
-            )
+            result["status"] = "skipped"
+            results.append(result)
             continue
 
         if errors and enricher:
@@ -137,19 +139,18 @@ def process_rule_file(
 
         # Here you can handle each rule and its associated errors
         if errors:
+            result["status"] = "error"
             failed += 1
-            logger.error(
-                f"{COLOUR_FAIL}🍩 Invalid Rule File: {yara_rule_path}:"
-                f"{rule['start_line']} ({rule['rule_name']}){COLOUR_ENDC}"
-            )
             for error in errors:
-                logger.error(f"  - `{error['loc'][0]}` is invalid: {error['msg']}")
+                result.setdefault("errors", []).append(
+                    {
+                        "loc": error["loc"],
+                        "msg": error["msg"],
+                    }
+                )
         else:
-            # Print valid rule only
-            logger.info(
-                f"{COLOUR_SUCCESS}   Valid Rule File: {yara_rule_path}:"
-                f"{rule['start_line']} ({rule['rule_name']}){COLOUR_ENDC}"
-            )
+            # If no errors, then considered valid
+            result["status"] = "valid"
 
         # If no changes flag is set, skip writing changes but print what the changes would be
         original_metadata = rule.get("metadata", [])
@@ -164,22 +165,17 @@ def process_rule_file(
         removals = [item for item in original_metadata if item not in new_metadata]
 
         if additions or removals:
-            logger.warning(
-                f"{COLOUR_WARNING}🔧 Proposed Changes for: {yara_rule_path}:{rule['rule_name']} based on enrichment"
-            )
             for change in new_metadata + removals:
                 key, value = next(iter(change.items()))
 
-                color = COLOUR_ENDC
-                symbol = " "
                 if change in additions:
-                    color = COLOUR_SUCCESS
-                    symbol = "+"
+                    action = "add"
                 elif change in removals:
-                    color = COLOUR_FAIL
-                    symbol = "-"
+                    action = "remove"
+                else:
+                    continue  # Skip if the change is neither an addition nor a removal
 
-                logger.warning(f"{color}  {symbol} {key} = {value}{COLOUR_ENDC}")
+                result.setdefault("proposed_changes", []).append({"action": action, "key": key, "value": value})
 
         if options.output in {"inplace", "createfile"} and not errors:
             # Rebuild the rule and update the in-memory file buffer
@@ -206,6 +202,9 @@ def process_rule_file(
             with open(new_file_path, "w", encoding="utf-8") as f:
                 f.write(rebuild_rule(rule))
 
+        # Save the result for this rule to the results list
+        results.append(result)
+
     # After processing all rules in the file, write changes if applicable
     if options.output == "inplace":
         # Write changes back to the original file
@@ -218,7 +217,7 @@ def process_rule_file(
         logger.debug(f"Writing validated rules to new file: {new_file_path}")
         with open(new_file_path, "w", encoding="utf-8") as f:
             f.write(yara_rule_content)
-    return total, failed
+    return total, failed, results
 
 
 def execute_command(options):
@@ -249,6 +248,7 @@ def execute_command(options):
 
         total_analyzed = 0
         total_failed = 0
+        all_results = []  # Collect results from all processed files
 
         enricher = None
         if options.enrich:
@@ -284,35 +284,81 @@ def execute_command(options):
 
             for yara_rule_path, future in futures.items():
                 try:
-                    total, failed = future.result()
+                    total, failed, results = future.result()
                     total_analyzed += total
                     total_failed += failed
+                    all_results.extend(results)
                 except Exception:
                     logger.exception(f"Error processing YARA rule file ({yara_rule_path})")
+
+        report = {
+            "total": total_analyzed,
+            "failed": total_failed,
+            "valid": total_analyzed - total_failed,
+            "results": all_results,
+        }
+
+        # Dump the report to a JSON file if requested
+        if options.json:
+            with open("rule_validation_report.json", "w", encoding="utf-8") as f:
+                f.write(json.dumps(report, indent=4))
+
+        # Print the results
+        for result in all_results:
+            if result["status"] == "skipped":
+                logger.warning(
+                    f"{COLOUR_WARNING}   Skipping Private Rule: {result['path']}:{result['rule_name']}{RESET}"
+                )
+            elif result["status"] == "error":
+                logger.error(
+                    f"{COLOUR_FAIL}🍩 Invalid Rule File: {result['path']}:{result['start_line']} "
+                    f"({result['rule_name']}){RESET}"
+                )
+                for error in result.get("errors", []):
+                    logger.error(f"  - {BOLD}{error['loc'][0]}{RESET} is invalid: {error['msg']}")
+            elif result["status"] == "valid":
+                logger.info(
+                    f"{COLOUR_SUCCESS}   Valid Rule File: {result['path']}:{result['start_line']} "
+                    f"({result['rule_name']}){RESET}"
+                )
+
+            if result.get("proposed_changes"):
+                logger.warning(
+                    f"{COLOUR_WARNING}🔧 Proposed Changes for: {result['path']}:{result['rule_name']} "
+                    "based on enrichment"
+                )
+                for change in result["proposed_changes"]:
+                    action = change["action"]
+                    color = COLOUR_SUCCESS if action == "add" else COLOUR_FAIL
+                    symbol = "+" if action == "add" else "-"
+                    logger.warning(f"{color}  {symbol} {change['key']} = {change['value']}{RESET}")
 
         total_valid = total_analyzed - total_failed
         valid_percentage = (total_valid / total_analyzed * 100) if total_analyzed > 0 else 0
         invalid_percentage = (total_failed / total_analyzed * 100) if total_analyzed > 0 else 0
 
         logger.error(
-            dedent(f"""{COLOUR_ENDC}
+            dedent(f"""{RESET}
         ----------------------------------------------------------------------------
         Statistics:
             Total Yara Rules Analyzed:  {total_analyzed}
-            Valid Yara Rules:           {COLOUR_SUCCESS}{total_valid} ({valid_percentage:.2f}%){COLOUR_ENDC}
-            Invalid Yara Rules:         {COLOUR_FAIL}{total_failed} ({invalid_percentage:.2f}%){COLOUR_ENDC}
+            Valid Yara Rules:           {COLOUR_SUCCESS}{total_valid} ({valid_percentage:.2f}%){RESET}
+            Invalid Yara Rules:         {COLOUR_FAIL}{total_failed} ({invalid_percentage:.2f}%){RESET}
         ---------------------------------------------------------------------------
         """)
         )
 
 
 def main():
-    print("""\
+    cli_version = version("cccs_yara")
+    padding = (50 - len(cli_version)) / 2
+    print(f"""\
       ____ ____ ____ ____   __   __ _    ____      _
      / ___/ ___/ ___/ ___|  \\ \\ / // \\  |  _ \\    / \\
     | |  | |  | |   \\___ \\   \\ V // _ \\ | |_) |  / _ \\
     | |__| |__| |___ ___) |   | |/ ___ \\|  _ <  / ___ \\
      \\____\\____\\____|____/    |_/_/   \\_\\_| \\_\\/_/   \\_\\
+    {"─" * int(padding)} v{cli_version} {"─" * int(padding)}
      """)
 
     # Defining the parser and arguments to parse,
@@ -391,6 +437,14 @@ def main():
         default=False,
         dest="ignore_private_rules",
         help="Ignore private rules during validation.",
+    )
+    validate_command.add_argument(
+        "--json",
+        "-j",
+        action="store_true",
+        default=False,
+        dest="json",
+        help="Output validation results in JSON format.",
     )
     args = parser.parse_args()
     if not args.command:

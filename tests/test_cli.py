@@ -1,8 +1,10 @@
+import json
 import subprocess
 import tempfile
 from pathlib import Path
 
 import pytest
+from git import Repo
 
 
 @pytest.mark.parametrize("ignore", [True, False])
@@ -182,3 +184,38 @@ rule dm_test {
         assert "TESTSOURCE" in content
     finally:
         path.unlink()
+
+
+@pytest.mark.parametrize("repository", ["https://github.com/BartBlaze/Yara-rules.git"], ids=["BartBlaze/Yara-rules"])
+def test_public_rulesets(repository):
+    """Test enrichment on a set of public YARA rules."""
+    default_metadata = {"classification": "TLP:CLEAR", "source": repository.split("/", 4)[3]}
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Clone the repository to a temporary directory
+        Repo.clone_from(repository, temp_dir, depth=1)
+
+        # Run the CLI command to validate and enrich the rules in the cloned repository
+        cmd = [
+            "cccs-yara",
+            "validate",
+            "-e",
+            "-r",
+            "--json",  # Product JSON report for analysis
+            "-dm",  # Insert default metadata for enrichment
+            json.dumps(default_metadata),
+            temp_dir,
+        ]
+        p = subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+        # Ensure the command completed successfully
+        assert p.returncode == 0
+
+        # Check the statistics output to ensure that rules were processed
+        with open("rule_validation_report.json", "r", encoding="utf-8") as f:
+            report = json.load(f)
+            valid_rules_percentage = report["valid"] / report["total"] * 100 if report["total"] > 0 else 0
+
+            # Aiming for at least 90% of the rules to be valid after enrichment
+            assert valid_rules_percentage >= 90.0, (
+                f"Expected at least 90% valid rules, but got {valid_rules_percentage}%"
+            )

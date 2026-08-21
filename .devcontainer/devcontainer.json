@@ -2,11 +2,8 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
 {
 	"name": "DevContainer",
-	"image": "mcr.microsoft.com/devcontainers/python:3.11",
-	"containerEnv": {
-		"SHELL": "/bin/bash"
-	},
-	"postCreateCommand": "pip install -e .[test]",
+	"image": "astral/uv:python3.11-alpine",
+	"postCreateCommand": "apk update && apk add git && uv pip install --system -e .[test] && git config --global --add safe.directory \"*\"",
 	"runArgs": [
 		"--network=host"
 	],

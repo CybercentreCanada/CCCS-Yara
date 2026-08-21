@@ -375,6 +375,15 @@ class Enricher:
             # remove actor metadata
             parsed_rule["metadata_kv"]["actor"].remove("COBALT")
 
+        # Metadata indicates this is a hacking tool, which we attribute to the MALWARE category instead of TOOL
+        if (
+            "HACKTOOL" in parsed_rule["metadata_kv"].get("malware_type", [])
+            and "MALWARE" == parsed_rule["metadata_kv"].get("category")
+            and parsed_rule["metadata_kv"].get("tool")
+        ):
+            # Move the metadata from the "tool" field to the "malware" field and set the category to MALWARE
+            parsed_rule["metadata_kv"]["malware"] = parsed_rule["metadata_kv"].pop("tool")
+
         # Cleanup metadata that has no value after enrichment
         for key in list(parsed_rule["metadata_kv"].keys()):
             if not parsed_rule["metadata_kv"][key]:
